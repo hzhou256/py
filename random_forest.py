@@ -4,10 +4,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn import metrics
 
 
-f1 = np.loadtxt("C:/学习/Bioinformatics/QSP/300p_300n/CTD/train_CTD.csv", delimiter = ',', skiprows = 1)
-f2 = np.loadtxt('C:/学习/Bioinformatics/QSP/300p_300n/train_label.csv', delimiter = ',')
-f3 = np.loadtxt("C:/学习/Bioinformatics/QSP/300p_300n/CTD/test_CTD.csv", delimiter = ',', skiprows = 1)
-f4 = np.loadtxt('C:/学习/Bioinformatics/QSP/300p_300n/test_label.csv', delimiter = ',')
+f1 = np.loadtxt("D:/study/Bioinformatics/QSP/300p_300n/CTD/train_CTD.csv", delimiter = ',', skiprows = 1)
+f2 = np.loadtxt('D:/study/Bioinformatics/QSP/300p_300n/train_label.csv', delimiter = ',')
+f3 = np.loadtxt("D:/study/Bioinformatics/QSP/300p_300n/CTD/test_CTD.csv", delimiter = ',', skiprows = 1)
+f4 = np.loadtxt('D:/study/Bioinformatics/QSP/300p_300n/test_label.csv', delimiter = ',')
 
 def get_matrix(file):
     m = np.shape(file)[0]

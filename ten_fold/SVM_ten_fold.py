@@ -41,10 +41,10 @@ for threshold in np.arange(0.1, 1, 0.05):
         sum_MCC = 0
         sum_AUC = 0
         for i in range(10):
-            f1 = np.loadtxt('C:/学习/Bioinformatics/QSP/200p_200n/10_fold/combine_matrix/combine_' + s + '_train_' + str(i) + '.csv', delimiter = ',')
-            f3 = np.loadtxt('C:/学习/Bioinformatics/QSP/200p_200n/10_fold/combine_matrix/combine_' + s + '_test_' + str(i) + '.csv', delimiter = ',')
-            f_test = np.loadtxt('C:/学习/Bioinformatics/QSP/200p_200n/10_fold/188-bit/test/test_188-bit_' + str(i) + '.csv', delimiter = ',')
-            f_train = np.loadtxt('C:/学习/Bioinformatics/QSP/200p_200n/10_fold/188-bit/train/train_188-bit_' + str(i) + '.csv', delimiter = ',')
+            f1 = np.loadtxt('D:/study/Bioinformatics/QSP/200p_200n/10_fold/combine_matrix/combine_' + s + '_train_' + str(i) + '.csv', delimiter = ',')
+            f3 = np.loadtxt('D:/study/Bioinformatics/QSP/200p_200n/10_fold/combine_matrix/combine_' + s + '_test_' + str(i) + '.csv', delimiter = ',')
+            f_test = np.loadtxt('D:/study/Bioinformatics/QSP/200p_200n/10_fold/188-bit/test/test_188-bit_' + str(i) + '.csv', delimiter = ',')
+            f_train = np.loadtxt('D:/study/Bioinformatics/QSP/200p_200n/10_fold/188-bit/train/train_188-bit_' + str(i) + '.csv', delimiter = ',')
 
             test_label = getlabel(f_test)
             train_label = getlabel(f_train)        

@@ -5,10 +5,10 @@ from sklearn import metrics
 from sklearn import model_selection
 
 
-f1 = np.loadtxt('C:/学习/Bioinformatics/QSP/144p_179n/kernel_matrix/combine_all_train.csv', delimiter = ',')
-f2 = np.loadtxt('C:/学习/Bioinformatics/QSP/144p_179n/train_label.csv', delimiter = ',')
-f3 = np.loadtxt('C:/学习/Bioinformatics/QSP/144p_179n/kernel_matrix/combine_all_test.csv', delimiter = ',')
-f4 = np.loadtxt('C:/学习/Bioinformatics/QSP/144p_179n/test_label.csv', delimiter = ',')
+f1 = np.loadtxt('D:/study/Bioinformatics/QSP/144p_179n/kernel_matrix/combine_all_train.csv', delimiter = ',')
+f2 = np.loadtxt('D:/study/Bioinformatics/QSP/144p_179n/train_label.csv', delimiter = ',')
+f3 = np.loadtxt('D:/study/Bioinformatics/QSP/144p_179n/kernel_matrix/combine_all_test.csv', delimiter = ',')
+f4 = np.loadtxt('D:/study/Bioinformatics/QSP/144p_179n/test_label.csv', delimiter = ',')
 
 np.set_printoptions(suppress = True)
 gram = f1

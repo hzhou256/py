@@ -1,7 +1,7 @@
 import numpy as np
 from svmutil import *
 from scipy.optimize import minimize
-from mkl_SVM.Knormalized import Knormalized
+#from mkl_SVM.Knormalized import Knormalized
 from sklearn import preprocessing
 ##----------------------------------------------------------------------------------------------------------------------##
 def kernel_RBF(X, Y):
@@ -95,13 +95,20 @@ def hsic_kernel_weights_norm(Kernels_list, adjmat,dim, regcoef1, regcoef2):
     # y = preprocessing.MinMaxScaler().fit_transform(y)
     # Graph based kernel
     if dim == 1:
-        ideal_kernel = np.dot(y, y.T)
+        temp = y
+        t1 = temp.reshape(len(temp), 1)
+        t2 = temp.reshape(1, len(temp))
+        ideal_kernel = np.dot(t1, t2)
     else:
-        ideal_kernel = np.dot(y.T, y)
+        temp = y
+        t1 = temp.reshape(len(temp), 1)
+        t2 = temp.reshape(1, len(temp))
+        ideal_kernel = np.dot(t1, t2)
     # ideal_kernel = kernel_RBF(ideal_kernel, ideal_kernel) # 求标签之间的相似度矩阵
     # ideal_kernel=Knormalized(ideal_kernel)
     # print(type(ideal_kernel))
-    N_U = np.size(ideal_kernel, 0)
+    #N_U = np.size(ideal_kernel, 0) 
+    N_U = np.shape(ideal_kernel)[0]
     l = np.ones((N_U, 1))
     H = np.eye(N_U, dtype=float) - np.dot(l, l.T)/N_U # H:NxN的矩阵
 

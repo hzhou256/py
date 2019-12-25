@@ -6,7 +6,7 @@ for it in range(5):
     name = methods_name[it]
     print(name + ':')
 
-    f1 = np.loadtxt('C:/学习/Bioinformatics/QSP/200p_200n/10_fold/' + name + '/train_' + name + '.csv', delimiter = ',', skiprows = 1)
+    f1 = np.loadtxt('D:/study/Bioinformatics/QSP/200p_200n/10_fold/' + name + '/train_' + name + '.csv', delimiter = ',', skiprows = 1)
     m = 0
     n = 20
     k = 0
@@ -21,7 +21,7 @@ for it in range(5):
             index = index + 1
         m = m + 20
         n = n + 20
-        with open('C:/学习/Bioinformatics/QSP/200p_200n/10_fold/' + name + '/test/test_' + name + '_' + str(k) + '.csv', 'w', newline='') as csvfile:
+        with open('D:/study/Bioinformatics/QSP/200p_200n/10_fold/' + name + '/test/test_' + name + '_' + str(k) + '.csv', 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
             for row in temp:
                 writer.writerow(row)
@@ -34,7 +34,7 @@ for it in range(5):
         temp = np.delete(temp, list(range(m, n)) + list(range(m+200, n+200)), axis = 0)
         m = m + 20
         n = n + 20
-        with open('C:/学习/Bioinformatics/QSP/200p_200n/10_fold/' + name + '/train/train_' + name + '_' + str(k) + '.csv', 'w', newline='') as csvfile:
+        with open('D:/study/Bioinformatics/QSP/200p_200n/10_fold/' + name + '/train/train_' + name + '_' + str(k) + '.csv', 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
             for row in temp:
                 writer.writerow(row)

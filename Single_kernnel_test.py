@@ -4,10 +4,10 @@ from sklearn import svm
 from sklearn import metrics
 
 
-f1 = np.loadtxt('C:/学习/Bioinformatics/QSP/ncbi/datasets/Kernel_matrix/PSSM_Pse/KM_gaussian_PSSM_Pse_train391.csv', delimiter = ',')
-f2 = np.loadtxt('C:/学习/Bioinformatics/QSP/ncbi/datasets/train391_label.csv', delimiter = ',')
-f3 = np.loadtxt('C:/学习/Bioinformatics/QSP/ncbi/datasets/Kernel_matrix/PSSM_Pse/KM_gaussian_PSSM_Pse_test39.csv', delimiter = ',')
-f4 = np.loadtxt('C:/学习/Bioinformatics/QSP/ncbi/datasets/test39_label.csv', delimiter = ',')
+f1 = np.loadtxt('D:/study/Bioinformatics/QSP/ncbi/datasets/Kernel_matrix/PSSM_Pse/KM_gaussian_PSSM_Pse_train391.csv', delimiter = ',')
+f2 = np.loadtxt('D:/study/Bioinformatics/QSP/ncbi/datasets/train391_label.csv', delimiter = ',')
+f3 = np.loadtxt('D:/study/Bioinformatics/QSP/ncbi/datasets/Kernel_matrix/PSSM_Pse/KM_gaussian_PSSM_Pse_test39.csv', delimiter = ',')
+f4 = np.loadtxt('D:/study/Bioinformatics/QSP/ncbi/datasets/test39_label.csv', delimiter = ',')
 
 np.set_printoptions(suppress = True)
 gram = f1

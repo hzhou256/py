@@ -4,7 +4,7 @@ import csv
 
 AA = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
 
-n_protein = 1840
+n_protein = 582
 ASDC = np.zeros((n_protein, 400))
 
 def get_ASDC(seq):
@@ -33,7 +33,7 @@ def get_ASDC(seq):
         Mat[p] = Mat[p] / sum
     return Mat
 
-f1 = open('D:/Study/Bioinformatics/AMP/test.fasta')
+f1 = open('D:/Study/Bioinformatics/AFP/datasets/Antifp_Hard/test.fasta')
 line = f1.readlines()
 x = 0
 for line_list in line:
@@ -43,7 +43,7 @@ for line_list in line:
         x = x + 1
 print(ASDC)
 
-with open('D:/Study/Bioinformatics/AMP/ASDC/test_ASDC.csv', 'w', newline='') as csvfile:
+with open('D:/Study/Bioinformatics/AFP/feature_matrix/Antifp_Hard/ASDC/test_ASDC.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
     for row in ASDC:
         writer.writerow(row)

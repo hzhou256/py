@@ -2,13 +2,13 @@ from sklearn.model_selection import GridSearchCV
 from sklearn import svm
 import numpy as np
 
-f1 = np.loadtxt("C:/学习/Bioinformatics/QSP/99p_99n/CKSAAP/train_CKSAAP.csv", delimiter = ',', skiprows = 1)
+f1 = np.loadtxt("D:/study/Bioinformatics/QSP/99p_99n/CKSAAP/train_CKSAAP.csv", delimiter = ',', skiprows = 1)
 m = np.shape(f1)[0]
 n = np.shape(f1)[1]
 data = np.zeros((m, n-1))
 for index in range(m):
     data[index] = f1[index][1:]
-f2 = np.loadtxt('C:/学习/Bioinformatics/QSP/99p_99n/train_label.csv', delimiter = ',')
+f2 = np.loadtxt('D:/study/Bioinformatics/QSP/99p_99n/train_label.csv', delimiter = ',')
 
 X_train = data
 y_train = f2

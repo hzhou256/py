@@ -4,7 +4,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.datasets import make_multilabel_classification
-from sklearn.multiclass import OneVsRestClassifier,OneVsOneClassifier
+from sklearn.multiclass import OneVsRestClassifier
 from sklearn.model_selection import LeaveOneOut
 from sklearn.metrics import hamming_loss
 
@@ -26,9 +26,9 @@ def multilLabel():
     X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2,random_state=0)
     binary_model = SVC(kernel="linear",random_state=1)
     # one-vs-all形式(既可以多类别问题也可以多标签多分类问题，fir(X,y)中y.shape=[samples] or [samples,classes])
-    # multi_model = OneVsRestClassifier(binary_model).fit(X_train,y_train)
+    multi_model = OneVsRestClassifier(binary_model).fit(X_train,y_train)
     # one-vs-one形式(只能用于多类别问题，fit(X,y)函数要求y.shape=[samples])
-    multi_model = OneVsOneClassifier(binary_model).fit(X_train,y_train)
+    #multi_model = OneVsOneClassifier(binary_model).fit(X_train,y_train)
     y_pred = multi_model.predict(X_test)
     print("True Labels:   ",y_test)
     print("Predict Labels:",y_pred)

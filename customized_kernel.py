@@ -6,10 +6,10 @@ from sklearn import model_selection
 from imblearn.metrics import specificity_score
 
 
-f1 = np.loadtxt('C:/学习/Bioinformatics/QSP/200p_200n/kernel_matrix/KM_train_tanimoto/combine_tanimoto_train.csv', delimiter = ',')
-f2 = np.loadtxt('C:/学习/Bioinformatics/QSP/200p_200n/train_label.csv', delimiter = ',')
-f3 = np.loadtxt('C:/学习/Bioinformatics/QSP/200p_200n/kernel_matrix/KM_test_tanimoto/combine_tanimoto_test.csv', delimiter = ',')
-f4 = np.loadtxt('C:/学习/Bioinformatics/QSP/200p_200n/test_label.csv', delimiter = ',')
+f1 = np.loadtxt('D:/study/Bioinformatics/QSP/200p_200n/kernel_matrix/KM_train_tanimoto/combine_tanimoto_train.csv', delimiter = ',')
+f2 = np.loadtxt('D:/study/Bioinformatics/QSP/200p_200n/train_label.csv', delimiter = ',')
+f3 = np.loadtxt('D:/study/Bioinformatics/QSP/200p_200n/kernel_matrix/KM_test_tanimoto/combine_tanimoto_test.csv', delimiter = ',')
+f4 = np.loadtxt('D:/study/Bioinformatics/QSP/200p_200n/test_label.csv', delimiter = ',')
 
 np.set_printoptions(suppress = True)
 gram = f1

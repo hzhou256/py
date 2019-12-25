@@ -6,7 +6,7 @@ from sklearn.multiclass import OneVsRestClassifier,OneVsOneClassifier
 
 label = []
 
-with open('C:/学习/Bioinformatics/AMP_multiple/label.txt', 'r') as csvfile:
+with open('C:/学习/Bioinformatics/AMP_multiple/label.csv', 'r') as csvfile:
     reader = csv.reader(csvfile)
     for line in reader:
         label.append(line)
