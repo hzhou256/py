@@ -45,17 +45,45 @@ def label_matrix(label):
 def obj_function(w,Mi,ai,regcoef1,regcoef2):
     J = -1*np.dot(w.T, ai) + regcoef1*np.dot(np.dot(w.T, Mi), w) + regcoef2*(np.linalg.norm(w, ord=2, keepdims=True))**2
     return J
-def con(args):
-    cons = ({'type': 'eq', 'fun': lambda w:sum(w)-1}, {'type': 'ineq', 'fun': lambda w:w[0]},
-            {'type': 'ineq', 'fun': lambda w:w[1]},{'type': 'ineq', 'fun': lambda w:w[2]},
-            {'type': 'ineq', 'fun': lambda w:w[3]},{'type': 'ineq', 'fun': lambda w:w[4]},
-            {'type': 'ineq', 'fun': lambda w:1-w[0]},{'type': 'ineq', 'fun': lambda w:1-w[1]},
-            {'type': 'ineq', 'fun': lambda w:1-w[2]},{'type': 'ineq', 'fun': lambda w:1-w[3]},
-            {'type': 'ineq', 'fun': lambda w:1-w[4]})
+def con(args, num_kernels):
+    #六个核
+    if num_kernels == 6:
+        cons = ({'type': 'eq', 'fun': lambda w:sum(w)-1}, {'type': 'ineq', 'fun': lambda w:w[0]},
+                {'type': 'ineq', 'fun': lambda w:w[1]},{'type': 'ineq', 'fun': lambda w:w[2]},
+                {'type': 'ineq', 'fun': lambda w:w[3]},{'type': 'ineq', 'fun': lambda w:w[4]},{'type': 'ineq', 'fun': lambda w:w[5]},
+                {'type': 'ineq', 'fun': lambda w:1-w[0]},{'type': 'ineq', 'fun': lambda w:1-w[1]},
+                {'type': 'ineq', 'fun': lambda w:1-w[2]},{'type': 'ineq', 'fun': lambda w:1-w[3]},
+                {'type': 'ineq', 'fun': lambda w:1-w[4]},{'type': 'ineq', 'fun': lambda w:1-w[5]})   
+    #五个核
+    elif num_kernels == 5:
+        cons = ({'type': 'eq', 'fun': lambda w:sum(w)-1}, {'type': 'ineq', 'fun': lambda w:w[0]},
+                {'type': 'ineq', 'fun': lambda w:w[1]},{'type': 'ineq', 'fun': lambda w:w[2]},
+                {'type': 'ineq', 'fun': lambda w:w[3]},{'type': 'ineq', 'fun': lambda w:w[4]},
+                {'type': 'ineq', 'fun': lambda w:1-w[0]},{'type': 'ineq', 'fun': lambda w:1-w[1]},
+                {'type': 'ineq', 'fun': lambda w:1-w[2]},{'type': 'ineq', 'fun': lambda w:1-w[3]},
+                {'type': 'ineq', 'fun': lambda w:1-w[4]})
+    #四个核
+    elif num_kernels == 4:
+        cons = ({'type': 'eq', 'fun': lambda w:sum(w)-1}, {'type': 'ineq', 'fun': lambda w:w[0]},
+                {'type': 'ineq', 'fun': lambda w:w[1]},{'type': 'ineq', 'fun': lambda w:w[2]},
+                {'type': 'ineq', 'fun': lambda w:w[3]},
+                {'type': 'ineq', 'fun': lambda w:1-w[0]},{'type': 'ineq', 'fun': lambda w:1-w[1]},
+                {'type': 'ineq', 'fun': lambda w:1-w[2]},{'type': 'ineq', 'fun': lambda w:1-w[3]})
+    #三个核
+    elif num_kernels == 3:
+        cons = ({'type': 'eq', 'fun': lambda w:sum(w)-1}, {'type': 'ineq', 'fun': lambda w:w[0]},
+                {'type': 'ineq', 'fun': lambda w:w[1]},{'type': 'ineq', 'fun': lambda w:w[2]},
+                {'type': 'ineq', 'fun': lambda w:1-w[0]},{'type': 'ineq', 'fun': lambda w:1-w[1]},
+                {'type': 'ineq', 'fun': lambda w:1-w[2]})    
+    #两个核
+    elif num_kernels == 2:
+        cons = ({'type': 'eq', 'fun': lambda w:sum(w)-1}, {'type': 'ineq', 'fun': lambda w:w[0]},
+                {'type': 'ineq', 'fun': lambda w:w[1]},
+                {'type': 'ineq', 'fun': lambda w:1-w[0]},{'type': 'ineq', 'fun': lambda w:1-w[1]})                
     return cons
 
 
-def optimize_weights(x0, fun):
+def optimize_weights(x0, fun, num_kernels):
     '''
     :param x0: 
     :param fun: 
@@ -69,7 +97,7 @@ def optimize_weights(x0, fun):
     LB = np.zeros((1, n))
     UB = np.ones((1, n))
     args = ()
-    cons = con(args)
+    cons = con(args, num_kernels)
     res = minimize(fun, x0, method='SLSQP', constraints=cons)
     # res = minimize(fun, x0, method='SLSQP')
     # print(res.x)
@@ -133,6 +161,6 @@ def hsic_kernel_weights_norm(Kernels_list, adjmat,dim, regcoef1, regcoef2):
 
     v = np.random.rand(num_kernels, 1)
     falpha = lambda v:obj_function(v, LapM, a, regcoef1, regcoef2)
-    x_alpha = optimize_weights(v, falpha)
+    x_alpha = optimize_weights(v, falpha, num_kernels)
     weight_v = x_alpha
     return weight_v
