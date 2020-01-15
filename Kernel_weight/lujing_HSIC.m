@@ -11,4 +11,4 @@ dim = 1;
 regcoef1 = 0.01;
 regcoef2 = 0;
 [weight_v] = hsic_kernel_weights_norm(Kernels_list,adjmat,dim,regcoef1,regcoef2)
-save('D:/Study/Bioinformatics/AFP/kernel_matrix_5/Antifp_DS1/KM_train_tanimoto/HSIC_weight.txt', 'weight_v', '-ascii');
+%save('D:/Study/Bioinformatics/AFP/kernel_matrix_5/Antifp_DS1/KM_train_tanimoto/HSIC_weight.txt', 'weight_v', '-ascii');
