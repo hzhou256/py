@@ -10,8 +10,8 @@ dataset_name = ['Antifp_Main', 'Antifp_DS1', 'Antifp_DS2']
 for ds in range(3):
     name_ds = dataset_name[ds]
     print(name_ds)
-    methods_name = ['ASDC', 'CKSAAP', 'DPC']
-    for it in range(3):
+    methods_name = ['ASDC', 'CKSAAP', 'DPC', 'CAT']
+    for it in range(3, 4):
         name = methods_name[it]
         print(name)
 
