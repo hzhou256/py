@@ -5,10 +5,10 @@ from sklearn import metrics
 from sklearn import model_selection
 
 
-f1 = np.loadtxt('D:/Study/Bioinformatics/QSP/99p_99n/CTD/train_CTD.csv', delimiter = ',', skiprows = 1)
-f2 = np.loadtxt('D:/Study/Bioinformatics/QSP/99p_99n/train_label.csv', delimiter = ',')
-f3 = np.loadtxt('D:/Study/Bioinformatics/QSP/99p_99n/CTD/test_CTD.csv', delimiter = ',', skiprows = 1)
-f4 = np.loadtxt('D:/Study/Bioinformatics/QSP/99p_99n/test_label.csv', delimiter = ',')
+f1 = np.loadtxt('D:/study/Bioinformatics/QSP/99p_99n/CTD/train_CTD.csv', delimiter = ',', skiprows = 1)
+f2 = np.loadtxt('D:/study/Bioinformatics/QSP/99p_99n/train_label.csv', delimiter = ',')
+f3 = np.loadtxt('D:/study/Bioinformatics/QSP/99p_99n/CTD/test_CTD.csv', delimiter = ',', skiprows = 1)
+f4 = np.loadtxt('D:/study/Bioinformatics/QSP/99p_99n/test_label.csv', delimiter = ',')
 
 def get_matrix(file):
     m = np.shape(file)[0]
