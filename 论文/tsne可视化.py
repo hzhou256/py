@@ -26,7 +26,7 @@ for ds in range(3):
         f1 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/' + name +'/train_' + name +'.csv', delimiter = ',', skiprows = 1)
         f2 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/train_label.csv', delimiter = ',')
 
-        X_train = f1
+        X_train = get_feature(f1)
         y_train = f2
         tsne=TSNE()
         X_tsne = tsne.fit_transform(X_train)
