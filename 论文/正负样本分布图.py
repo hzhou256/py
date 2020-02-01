@@ -39,7 +39,7 @@ for ds in range(3):
     plt.ylabel("Rate")
     plt.legend()
 
-    test_file = "D:/Study/Bioinformatics/AFP/datasets/" + name_ds + "//validation.xlsx"
+    test_file = "D:/Study/Bioinformatics/AFP/datasets/" + name_ds + "/validation.xlsx"
     wb = xlrd.open_workbook(filename = test_file)
     sheet1 = wb.sheet_by_name('positive')
     sheet2 = wb.sheet_by_name('negative')
