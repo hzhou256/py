@@ -52,7 +52,7 @@ for ds in range(1, 2):
         precision, recall, thresholds = metrics.precision_recall_curve(y_test, y_score)
         AP = metrics.average_precision_score(y_test, y_score)
         AP = round(AP, 4)
-        plt.plot(precision, recall, label = 'Naive Bayes - AP: ' + str(AP))
+        plt.plot(recall, precision, label = 'Naive Bayes - AP: ' + str(AP))
 
         #随机森林
         clf = RandomForestClassifier(max_depth = 79, n_estimators = 178)
@@ -62,7 +62,7 @@ for ds in range(1, 2):
         precision, recall, thresholds = metrics.precision_recall_curve(y_test, y_score)
         AP = metrics.average_precision_score(y_test, y_score)
         AP = round(AP, 4)
-        plt.plot(precision, recall, label = 'Random Forest - AP: ' + str(AP))
+        plt.plot(recall, precision, label = 'Random Forest - AP: ' + str(AP))
 
         #决策树
         clf = DecisionTreeClassifier(max_depth = 57, min_samples_leaf = 2)
@@ -72,7 +72,7 @@ for ds in range(1, 2):
         precision, recall, thresholds = metrics.precision_recall_curve(y_test, y_score)
         AP = metrics.average_precision_score(y_test, y_score)
         AP = round(AP, 4)
-        plt.plot(precision, recall, label = 'Decision Tree - AP: ' + str(AP))
+        plt.plot(recall, precision, label = 'Decision Tree - AP: ' + str(AP))
 
         #支持向量机
         clf = svm.SVC(C = 2.352, gamma = 13.843, kernel = 'rbf', probability = True)
@@ -82,7 +82,7 @@ for ds in range(1, 2):
         precision, recall, thresholds = metrics.precision_recall_curve(y_test, y_score)
         AP = metrics.average_precision_score(y_test, y_score)
         AP = round(AP, 4)
-        plt.plot(precision, recall, label = 'SVM - AP: ' + str(AP))        
+        plt.plot(recall, precision, label = 'SVM - AP: ' + str(AP))        
 
         #Our Model
         f1 = np.loadtxt('D:/Study/Bioinformatics/AFP/kernel_matrix_2/' + name_ds + '/KM_train_tanimoto/combine_tanimoto_HSIC_train.csv', delimiter = ',')
@@ -103,10 +103,10 @@ for ds in range(1, 2):
         precision, recall, thresholds = metrics.precision_recall_curve(y_test, y_score)
         AP = metrics.average_precision_score(y_test, y_score)
         AP = round(AP, 4)
-        plt.plot(precision, recall, label = 'Our Model - AP: ' + str(AP))  
+        plt.plot(recall, precision, label = 'Our Model - AP: ' + str(AP))  
 
         plt.legend()
-        plt.xlabel('Precision')
-        plt.ylabel('Recall')
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
         plt.savefig("D:/论文/图表/ROC_PR/PR_" + name_ds + ".png")
         plt.show()
