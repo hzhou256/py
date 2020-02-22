@@ -32,10 +32,10 @@ for ds in range(2, 3):
     for it in range(1):
         name = methods_name[it]
 
-        f1 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/' + name + '/train_' + name + '.csv', delimiter = ',', skiprows = 1)
-        f2 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/train_label.csv', delimiter = ',')
-        f3 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/' + name + '/test_' + name + '.csv', delimiter = ',', skiprows = 1)
-        f4 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/test_label.csv', delimiter = ',')        
+        f1 = np.loadtxt('E:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/' + name + '/train_' + name + '.csv', delimiter = ',', skiprows = 1)
+        f2 = np.loadtxt('E:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/train_label.csv', delimiter = ',')
+        f3 = np.loadtxt('E:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/' + name + '/test_' + name + '.csv', delimiter = ',', skiprows = 1)
+        f4 = np.loadtxt('E:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/test_label.csv', delimiter = ',')        
 
         X_train = get_matrix(f1)
         X_test = get_matrix(f3)
@@ -77,10 +77,10 @@ for ds in range(2, 3):
         plt.plot(fpr, tpr, label = 'SVM - AUC: 0.9761')        
 
         #Our Model
-        f1 = np.loadtxt('D:/Study/Bioinformatics/AFP/kernel_matrix_2/' + name_ds + '/KM_train_tanimoto/combine_tanimoto_HSIC_train.csv', delimiter = ',')
-        f2 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/train_label.csv', delimiter = ',')
-        f3 = np.loadtxt('D:/Study/Bioinformatics/AFP/kernel_matrix_2/' + name_ds + '/KM_test_tanimoto/combine_tanimoto_HSIC_test.csv', delimiter = ',')
-        f4 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/test_label.csv', delimiter = ',')
+        f1 = np.loadtxt('E:/Study/Bioinformatics/AFP/kernel_matrix_2/' + name_ds + '/KM_train_tanimoto/combine_tanimoto_HSIC_train.csv', delimiter = ',')
+        f2 = np.loadtxt('E:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/train_label.csv', delimiter = ',')
+        f3 = np.loadtxt('E:/Study/Bioinformatics/AFP/kernel_matrix_2/' + name_ds + '/KM_test_tanimoto/combine_tanimoto_HSIC_test.csv', delimiter = ',')
+        f4 = np.loadtxt('E:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/test_label.csv', delimiter = ',')
 
         gram = f1
         y_train = f2
@@ -96,7 +96,8 @@ for ds in range(2, 3):
         plt.plot(fpr, tpr, label = 'Our Model - AUC: 0.9779')  
 
         plt.legend()
+        plt.title(name_ds)
         plt.xlabel('False positive rate')
         plt.ylabel('True positive rate')
-        plt.savefig("D:/论文/图表/ROC_PR/ROC_" + name_ds + ".png")
+        plt.savefig("E:/论文/图表/ROC_PR/不同分类器/ROC_" + name_ds + ".png")
         plt.show()

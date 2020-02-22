@@ -2,7 +2,6 @@ import numpy as np
 from sklearn import svm
 from sklearn import metrics
 from sklearn import model_selection
-from imblearn.metrics import specificity_score
 import matplotlib.pyplot as plt 
 
 def get_matrix(file):
@@ -31,10 +30,10 @@ for ds in range(1, 2):
     for it in range(5):
         name = methods_name[it]
 
-        f1 = np.loadtxt('D:/Study/Bioinformatics/AFP/kernel_matrix/' + name_ds + '/KM_train_tanimoto/KM_tanimoto_' + name + '_train.csv', delimiter = ',')
-        f2 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/train_label.csv', delimiter = ',')
-        f3 = np.loadtxt('D:/Study/Bioinformatics/AFP/kernel_matrix/' + name_ds + '/KM_test_tanimoto/KM_tanimoto_' + name + '_test.csv', delimiter = ',')
-        f4 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/test_label.csv', delimiter = ',')
+        f1 = np.loadtxt('E:/Study/Bioinformatics/AFP/kernel_matrix/' + name_ds + '/KM_train_tanimoto/KM_tanimoto_' + name + '_train.csv', delimiter = ',')
+        f2 = np.loadtxt('E:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/train_label.csv', delimiter = ',')
+        f3 = np.loadtxt('E:/Study/Bioinformatics/AFP/kernel_matrix/' + name_ds + '/KM_test_tanimoto/KM_tanimoto_' + name + '_test.csv', delimiter = ',')
+        f4 = np.loadtxt('E:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/test_label.csv', delimiter = ',')
 
         np.set_printoptions(suppress = True)
         gram = f1
@@ -51,7 +50,8 @@ for ds in range(1, 2):
         plt.plot(fpr, tpr, label = name + ' - AUC: ' + str(auc_list[it]))  
 
     plt.legend()
+    plt.title(name_ds)
     plt.xlabel('False positive rate')
     plt.ylabel('True positive rate')
-    plt.savefig("D:/论文/图表/ROC_PR/不同特征/ROC_" + name_ds + ".png")
+    plt.savefig("E:/论文/图表/ROC_PR/不同特征/ROC_" + name_ds + ".png")
     plt.show()
