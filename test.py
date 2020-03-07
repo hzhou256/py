@@ -1,9 +1,10 @@
-import xlrd
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+import csv
 
 
-titanic = sns.load_dataset("titanic")
-print(titanic)
+A = np.random.randint(0, 10, (100, 100))
+with open('E:/高性能计算实践/test.txt', 'w', newline='') as csvfile:
+    writer = csv.writer(csvfile)
+    for row in A:
+        writer.writerow(row)
+csvfile.close()
