@@ -67,7 +67,7 @@ def get_inverse_matrix_parallel(input_matrix, row_start, row_end):
 
 
 
-order, A = get_mat('E:/高性能计算实践/test.txt')
+order, A = get_mat('高性能计算实践/test.txt')
 print(order)
 
 #串行代码
@@ -114,6 +114,35 @@ f4 = job_server.submit(get_inverse_matrix_parallel, (A, 75, 99), (gen_empty_matr
         ("numpy", "copy", "sys"))
 
 result = f1()+f2()+f3()+f4()
+#print(result)
+endTime = time.perf_counter()
+
+print("use: %.3fs"%(endTime - startTime))
+
+#并行代码八线程
+print("{beg} 8 parallel process  {beg}".format(beg='-'*16))
+startTime = time.perf_counter()
+
+job_server = pp.Server()
+
+f1 = job_server.submit(get_inverse_matrix_parallel, (A, 0, 12), (gen_empty_matrix, get_determinant, get_transposed_matrix_parallel, get_cofactor_matrix_parallel, get_adjunct_matrix,),
+        ("numpy", "copy", "sys"))
+f2 = job_server.submit(get_inverse_matrix_parallel, (A, 13, 24), (gen_empty_matrix, get_determinant, get_transposed_matrix_parallel, get_cofactor_matrix_parallel, get_adjunct_matrix,),
+        ("numpy", "copy", "sys"))
+f3 = job_server.submit(get_inverse_matrix_parallel, (A, 25, 36), (gen_empty_matrix, get_determinant, get_transposed_matrix_parallel, get_cofactor_matrix_parallel, get_adjunct_matrix,),
+        ("numpy", "copy", "sys"))
+f4 = job_server.submit(get_inverse_matrix_parallel, (A, 37, 48), (gen_empty_matrix, get_determinant, get_transposed_matrix_parallel, get_cofactor_matrix_parallel, get_adjunct_matrix,),
+        ("numpy", "copy", "sys"))
+f5 = job_server.submit(get_inverse_matrix_parallel, (A, 49, 60), (gen_empty_matrix, get_determinant, get_transposed_matrix_parallel, get_cofactor_matrix_parallel, get_adjunct_matrix,),
+        ("numpy", "copy", "sys"))
+f6 = job_server.submit(get_inverse_matrix_parallel, (A, 61, 72), (gen_empty_matrix, get_determinant, get_transposed_matrix_parallel, get_cofactor_matrix_parallel, get_adjunct_matrix,),
+        ("numpy", "copy", "sys"))
+f7 = job_server.submit(get_inverse_matrix_parallel, (A, 73, 84), (gen_empty_matrix, get_determinant, get_transposed_matrix_parallel, get_cofactor_matrix_parallel, get_adjunct_matrix,),
+        ("numpy", "copy", "sys"))
+f8 = job_server.submit(get_inverse_matrix_parallel, (A, 85, 99), (gen_empty_matrix, get_determinant, get_transposed_matrix_parallel, get_cofactor_matrix_parallel, get_adjunct_matrix,),
+        ("numpy", "copy", "sys"))
+
+result = f1()+f2()+f3()+f4()+f5()+f6()+f7()+f8()
 #print(result)
 endTime = time.perf_counter()
 
