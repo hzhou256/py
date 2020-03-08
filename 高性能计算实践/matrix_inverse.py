@@ -78,15 +78,31 @@ B = matrixtool.get_inverse_matrix(A)
 #print(B)
 
 endTime = time.perf_counter()
-print("use: %.3fs"%(endTime-startTime))
+print("use: %.3fs"%(endTime - startTime))
 
 
-#并行代码
-print("{beg} parallel process {beg}".format(beg='-'*16))
+#并行代码双线程
+print("{beg} parallel process 2 thread {beg}".format(beg='-'*16))
 startTime = time.perf_counter()
 
 job_server = pp.Server()
-inputs = ((A, 0, 24), (A, 25, 49), (A, 50, 74), (A, 75, 99))
+
+f1 = job_server.submit(get_inverse_matrix_parallel, (A, 0, 49), (gen_empty_matrix, get_determinant, get_transposed_matrix_parallel, get_cofactor_matrix_parallel, get_adjunct_matrix,),
+        ("numpy", "copy", "sys"))
+f2 = job_server.submit(get_inverse_matrix_parallel, (A, 50, 99), (gen_empty_matrix, get_determinant, get_transposed_matrix_parallel, get_cofactor_matrix_parallel, get_adjunct_matrix,),
+        ("numpy", "copy", "sys"))
+
+result = f1()+f2()
+#print(result)
+endTime = time.perf_counter()
+
+print("use: %.3fs"%(endTime - startTime))
+
+#并行代码四线程
+print("{beg} parallel process 4 thread {beg}".format(beg='-'*16))
+startTime = time.perf_counter()
+
+job_server = pp.Server()
 
 f1 = job_server.submit(get_inverse_matrix_parallel, (A, 0, 24), (gen_empty_matrix, get_determinant, get_transposed_matrix_parallel, get_cofactor_matrix_parallel, get_adjunct_matrix,),
         ("numpy", "copy", "sys"))
@@ -101,5 +117,4 @@ result = f1()+f2()+f3()+f4()
 #print(result)
 endTime = time.perf_counter()
 
-print("use: %.3fs"%(endTime-startTime))
-
+print("use: %.3fs"%(endTime - startTime))
