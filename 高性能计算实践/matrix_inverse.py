@@ -82,7 +82,7 @@ print("use: %.3fs"%(endTime - startTime))
 
 
 #并行代码双线程
-print("{beg} parallel process 2 thread {beg}".format(beg='-'*16))
+print("{beg} 2 parallel process  {beg}".format(beg='-'*16))
 startTime = time.perf_counter()
 
 job_server = pp.Server()
@@ -99,7 +99,7 @@ endTime = time.perf_counter()
 print("use: %.3fs"%(endTime - startTime))
 
 #并行代码四线程
-print("{beg} parallel process 4 thread {beg}".format(beg='-'*16))
+print("{beg} 4 parallel process  {beg}".format(beg='-'*16))
 startTime = time.perf_counter()
 
 job_server = pp.Server()
