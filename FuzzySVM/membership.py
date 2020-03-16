@@ -113,21 +113,21 @@ def reconstruction_error(x, X, y, K, k): # calculate reconstruction_error for x
     e = e_1 + e_2 + e_3
     return e
 
-def e_rescale(e, mu, theta): # theta: mean, mu: variance
-    temp = (e - mu) / theta
+def e_rescale(e, mu, sigma): # sigma: mean, mu: variance
+    temp = (e - mu) / sigma
     if temp > 0:
         return temp
     else:
         return 0
 
-def FSVM_N_membership(X, y, K, k, theta_N): # X: data, y: label, K: kernel function, k: PCA dimension, theta_N: parameter
+def FSVM_N_membership(X, y, K, k, sigma_N): # X: data, y: label, K: kernel function, k: PCA dimension, sigma_N: parameter
     N = len(y)
     s = np.zeros(N)
     e = np.zeros(N)
     for i in range(N):
         e[i] = reconstruction_error(X[i], X, y, K, k)
-    theta = np.mean(e)
+    sigma = np.mean(e)
     mu = np.std(e, ddof = 1)
     for i in range(N):
-        s[i] = np.exp(-1/(theta_N*theta_N) * e_rescale(e[i], mu, theta))
+        s[i] = np.exp(-1/(sigma_N*sigma_N) * e_rescale(e[i], mu, sigma))
     return s
