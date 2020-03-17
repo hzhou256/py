@@ -139,7 +139,7 @@ def reconstruction_error(x, X, y, K, k):
 def e_rescale(e, mu, sigma): 
     '''
     Rescale the reconstruction_error
-    sigma: mean, mu: variance
+    mu: mean, sigma: variance
     '''
     temp = (e - mu) / sigma
     if temp > 0:
