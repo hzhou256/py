@@ -5,7 +5,7 @@ import numpy as np
 def gaussian(X, mu, sigma2):
     '''
     返回一个(m, )维向量，包含每个样本的概率值
-    '''
+
     m, n = np.shape(X) # m: 样本数量, n: 特征数量
     if np.ndim(sigma2) == 1:
         sigma2 = np.diag(sigma2)
@@ -15,6 +15,15 @@ def gaussian(X, mu, sigma2):
         xrow = X[row]
         exp[row] = np.exp(-0.5*((xrow-mu).T).dot(np.linalg.inv(sigma2)).dot(xrow-mu))
     return norm*exp
+    '''
+    n = len(mu)
+    if np.ndim(sigma2) == 1:
+        sigma2 = np.diag(sigma2)
+    X = X - mu
+    p1 = np.power(2*np.pi, -n/2)*np.power(np.linalg.det(sigma2), -1/2)
+    e = np.diag(X.dot(np.linalg.inv(sigma2)).dot(X.T))  # 取对角元素，类似与方差，而不要协方差
+    p2 = np.exp(-0.5*e)
+    return p1 * p2
 
 def get_gaussian_params(X, useMultivariate):
     '''

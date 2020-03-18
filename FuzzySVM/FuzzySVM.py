@@ -3,6 +3,8 @@ path='D:/Program Files/libsvm_weights-3.23/python'
 sys.path.append(path)
 import numpy as np
 import membership
+import membership_non_jit
+import anomaly_detection
 from sklearn import svm
 from svmutil import *
 from sklearn import model_selection
@@ -22,7 +24,7 @@ for ds in range(1):
     name_ds = dataset_name[ds]
     print('dataset:', name_ds)
     methods_name = ['188-bit', 'AAC', 'ASDC', 'CKSAAP', 'CTD', 'DPC']
-    for it in range(1,2):
+    for it in range(5,6):
         name = methods_name[it]
         print(name + ':')
 
@@ -31,19 +33,20 @@ for ds in range(1):
         X_train = get_feature(f1)
         y_train = f2
 
-        y, X = svm_read_problem('E:/Study/Bioinformatics/FuzzySVM/feature_matrix/' + name_ds +'/' + name + '/train_' + name + '.svm')
-        y_test, X_test = svm_read_problem('E:/Study/Bioinformatics/FuzzySVM/feature_matrix/' + name_ds +'/' + name + '/test_' + name + '.svm')
-        W = membership.FSVM_2_membership(X_train, y_train, 0.1, membership.tanimoto)
-        print(W)
-        '''
-        prob = svm_problem(W, y, X)
+        f3 = np.loadtxt('E:/Study/Bioinformatics/FuzzySVM/feature_matrix/' + name_ds +'/' + name + '/test_' + name + '.csv', delimiter = ',', skiprows = 1)
+        f4 = np.loadtxt('E:/Study/Bioinformatics/FuzzySVM/feature_matrix/' + name_ds + '/test_label.csv', delimiter = ',')
+        X_test = get_feature(f3)
+        y_test = f4
+
+        y_svm, X_svm = svm_read_problem('E:/Study/Bioinformatics/FuzzySVM/feature_matrix/' + name_ds +'/' + name + '/train_' + name + '.svm')
+        y_test_svm, X_test_svm = svm_read_problem('E:/Study/Bioinformatics/FuzzySVM/feature_matrix/' + name_ds +'/' + name + '/test_' + name + '.svm')
+        #W = membership.FSVM_2_membership(X_test, y_test, 0.1, membership.gaussian)
+        #W = membership.FSVM_N_membership(X_test, y_test, 2, 1, membership.gaussian)
+        #mu, sigma2 = anomaly_detection.get_gaussian_params(X_train, False)
+        #W = anomaly_detection.gaussian(X_train, mu, sigma2)
+        #print(W)
 
         cv = model_selection.StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
-        #space = {'kernel':['rbf'],'C':np.logspace(-7, 3, base = 10), 'gamma':np.logspace(-7, 5, base = 10)}
-        #grid = model_selection.GridSearchCV(svm.SVC(kernel = 'rbf', probability = True), space, n_jobs = -1, cv = cv)
-        #grid.fit(X_train, y_train)
-        #C = grid.best_params_['C']
-        #g = grid.best_params_['gamma']
 
         # create a function to minimize.
         def SVM_accuracy_cv(params, cv = cv, X = X_train, y = y_train):
@@ -55,30 +58,60 @@ for ds in range(1):
             score = -model_selection.cross_val_score(model, X, y, cv=cv, scoring="accuracy", n_jobs = -1).mean()
             return score
 
+        def svm_weight_ACC_1(params, X_svm = X_svm, y_svm = y_svm, X = X_train, y = y_train):
+            params = {'C': params['C'], 'gamma': params['gamma'], 'delta': params['delta']}
+            W = membership.class_center_membership(X, y, params['delta'])
+            prob = svm_problem(W, y_svm, X_svm)
+            param = svm_parameter('-t 2 -c '+str(params['C'])+' -g '+str(params['gamma'])+' -v 5')
+            score = svm_train(prob, param)
+            return -score
+        
+        def svm_weight_ACC_2(params, X_svm = X_svm, y_svm = y_svm, X = X_train, y = y_train):
+            params = {'C': params['C'], 'gamma': params['gamma'], 'delta': params['delta']}
+            W = membership_non_jit.FSVM_2_membership(X, y, params['delta'], membership_non_jit.gaussian, g = params['gamma'])
+            prob = svm_problem(W, y_svm, X_svm)
+            param = svm_parameter('-t 2 -c '+str(params['C'])+' -g '+str(params['gamma'])+' -v 5')
+            score = svm_train(prob, param)
+            return -score
+        
+        def svm_weight_ACC_gauss(params, X_svm = X_svm, y_svm = y_svm, X = X_train, y = y_train):
+            params = {'C': params['C'], 'gamma': params['gamma']}
+            mu, sigma2 = anomaly_detection.get_gaussian_params(X, False)
+            W = anomaly_detection.gaussian(X, mu, sigma2)
+            prob = svm_problem(W, y_svm, X_svm)
+            param = svm_parameter('-t 2 -c '+str(params['C'])+' -g '+str(params['gamma'])+' -v 5')
+            score = svm_train(prob, param)
+            return -score
+
         # possible values of parameters
-        space= {'C': hp.loguniform('C', low = np.log(1e-7) , high = np.log(1e2)), 
-                'gamma': hp.loguniform('gamma', low = np.log(1e-7) , high = np.log(1e5))}
+        space_1 = {'C': hp.loguniform('C', low = np.log(1e-7) , high = np.log(1e3)), 
+                'gamma': hp.loguniform('gamma', low = np.log(1e-7) , high = np.log(1e5)), 'delta': hp.loguniform('delta', low = np.log(1e-3) , high = np.log(1e3))}
+
+        space_2 = {'C': hp.loguniform('C', low = np.log(1e-7) , high = np.log(1e3)), 
+                'gamma': hp.loguniform('gamma', low = np.log(1e-7) , high = np.log(1e5)), 'delta': hp.loguniform('delta', low = np.log(1e-3) , high = np.log(1e3))}
+
+        space_gauss = {'C': hp.loguniform('C', low = np.log(1e-7) , high = np.log(1e3)), 'gamma': hp.loguniform('gamma', low = np.log(1e-7) , high = np.log(1e5))}
 
         # trials will contain logging information
         trials = Trials()
-        best = fmin(fn = SVM_accuracy_cv, # function to optimize
-                space = space,
+        best = fmin(fn = svm_weight_ACC_2, # function to optimize
+                space = space_2,
                 algo = tpe.suggest, # optimization algorithm, hyperotp will select its parameters automatically
                 max_evals = 50, # maximum number of iterations
                 trials = trials, # logging
                 )
         C = best['C']
         g = best['gamma']
+        delta = best['delta']
         print('C =', C)
         print('g =', g)
+        print('delta =', delta)
 
-        
-        C = 1.4
-        g = 77
-
-        param = svm_parameter('-t 2 -c '+str(C)+' -g '+str(g)+' -b 1')
+        #W = membership.class_center_membership(X_train, y_train, delta)
+        W = membership_non_jit.FSVM_2_membership(X_train, y_train, delta, membership_non_jit.gaussian, g = g)
+        prob = svm_problem(W, y_svm, X_svm)
+        param = svm_parameter('-t 2 -c '+str(C)+' -g '+str(g))
         m = svm_train(prob, param)
         #CV_ACC = svm_train(W, y, X, '-v 5')
-        p_label, p_acc, p_val = svm_predict(y_test, X_test, m)
+        p_label, p_acc, p_val = svm_predict(y_test_svm, X_test_svm, m)
         print(p_acc[0])
-        '''
