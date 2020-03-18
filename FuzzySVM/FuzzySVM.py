@@ -1,9 +1,9 @@
 import sys
 path='D:/Program Files/libsvm_weights-3.23/python'
 sys.path.append(path)
+import csv
 import numpy as np
 import membership
-import membership_non_jit
 import anomaly_detection
 from sklearn import svm
 from svmutil import *
@@ -40,11 +40,6 @@ for ds in range(1):
 
         y_svm, X_svm = svm_read_problem('E:/Study/Bioinformatics/FuzzySVM/feature_matrix/' + name_ds +'/' + name + '/train_' + name + '.svm')
         y_test_svm, X_test_svm = svm_read_problem('E:/Study/Bioinformatics/FuzzySVM/feature_matrix/' + name_ds +'/' + name + '/test_' + name + '.svm')
-        #W = membership.FSVM_2_membership(X_test, y_test, 0.1, membership.gaussian)
-        #W = membership.FSVM_N_membership(X_test, y_test, 2, 1, membership.gaussian)
-        #mu, sigma2 = anomaly_detection.get_gaussian_params(X_train, False)
-        #W = anomaly_detection.gaussian(X_train, mu, sigma2)
-        #print(W)
 
         cv = model_selection.StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
 
@@ -68,7 +63,7 @@ for ds in range(1):
         
         def svm_weight_ACC_2(params, X_svm = X_svm, y_svm = y_svm, X = X_train, y = y_train):
             params = {'C': params['C'], 'gamma': params['gamma'], 'delta': params['delta']}
-            W = membership_non_jit.FSVM_2_membership(X, y, params['delta'], membership_non_jit.gaussian, g = params['gamma'])
+            W = membership.FSVM_2_membership(X, y, params['delta'], membership.gaussian, g = params['gamma'])
             prob = svm_problem(W, y_svm, X_svm)
             param = svm_parameter('-t 2 -c '+str(params['C'])+' -g '+str(params['gamma'])+' -v 5')
             score = svm_train(prob, param)
@@ -76,8 +71,7 @@ for ds in range(1):
         
         def svm_weight_ACC_gauss(params, X_svm = X_svm, y_svm = y_svm, X = X_train, y = y_train):
             params = {'C': params['C'], 'gamma': params['gamma']}
-            mu, sigma2 = anomaly_detection.get_gaussian_params(X, False)
-            W = anomaly_detection.gaussian(X, mu, sigma2)
+            W = membership.gauss_membership(X, y, False)
             prob = svm_problem(W, y_svm, X_svm)
             param = svm_parameter('-t 2 -c '+str(params['C'])+' -g '+str(params['gamma'])+' -v 5')
             score = svm_train(prob, param)
@@ -94,21 +88,28 @@ for ds in range(1):
 
         # trials will contain logging information
         trials = Trials()
-        best = fmin(fn = svm_weight_ACC_2, # function to optimize
-                space = space_2,
+        best = fmin(fn = svm_weight_ACC_gauss, # function to optimize
+                space = space_gauss,
                 algo = tpe.suggest, # optimization algorithm, hyperotp will select its parameters automatically
-                max_evals = 50, # maximum number of iterations
+                max_evals = 100, # maximum number of iterations
                 trials = trials, # logging
                 )
         C = best['C']
         g = best['gamma']
-        delta = best['delta']
+        #delta = best['delta']
         print('C =', C)
         print('g =', g)
-        print('delta =', delta)
+        #print('delta =', delta)
 
         #W = membership.class_center_membership(X_train, y_train, delta)
-        W = membership_non_jit.FSVM_2_membership(X_train, y_train, delta, membership_non_jit.gaussian, g = g)
+        #W = membership.FSVM_2_membership(X_train, y_train, delta, membership.gaussian, g = g)
+        #with open('E:/Study/Bioinformatics/FuzzySVM/feature_matrix/' + name_ds +'/' + name + '/W_FSVM_2_' + name + '.csv', 'w', newline='') as csvfile:
+        #    writer = csv.writer(csvfile)
+        #    for row in W:
+        #        writer.writerow(row)
+        #csvfile.close()
+
+        W = membership.gauss_membership(X_train, y_train, False)
         prob = svm_problem(W, y_svm, X_svm)
         param = svm_parameter('-t 2 -c '+str(C)+' -g '+str(g))
         m = svm_train(prob, param)
