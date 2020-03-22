@@ -2,7 +2,6 @@ import numpy as np
 import collections
 from scipy.spatial.distance import cdist
 import numba
-import pp
 
 
 @numba.jit(nopython = True, fastmath = True) 
@@ -96,88 +95,67 @@ def FSVM_2_membership(X, y, delta, K, **kwargs):
     return s
 
 # 3. Fuzzy SVM for Noisy Data
-def get_kth_evec(X, k, N, K, **kwargs): 
+def get_kth_evec(k, sorted_indices, evecs): 
     '''
     Calculate k_th largest eigenvector
     '''
-    G = np.zeros((N, N)) # Kernel matrix
-    for i in range(N):
-        for j in range(N):
-            G[i][j] = K(X[i], X[j], **kwargs)
-    evals, evecs = np.linalg.eig(G)
-    sorted_indices = np.argsort(evals)
     kth_evec = evecs[:,sorted_indices[-k]]
     return kth_evec
 
-def get_beta(x_i, X, N, j, K, **kwargs): 
+def get_beta(index, j, Gram, sorted_indices, evecs): 
     '''
     Calculate beta_j
     '''
-    alpha = get_kth_evec(X, j, N, K, **kwargs)
-    beta = 0
-    for i in range(N):
-        beta = beta + alpha[i] * K(x_i, X[i], **kwargs)
+    alpha = get_kth_evec(j, sorted_indices, evecs)
+    temp = Gram[index]
+    beta = np.dot(alpha, temp)
     return beta
 
-def get_gamma(X, N, l, K, **kwargs): 
+def get_gamma(l, Gram, sorted_indices, evecs): 
     '''
     Calculate gamma_l
     '''
-    alpha = get_kth_evec(X, l, N, K, **kwargs)
-    gamma = 0
-    for i in range(N):
-        for j in range(N):
-            gamma = gamma + alpha[i] * K(X[i], X[j], **kwargs)
-    gamma = gamma / N
+    alpha = get_kth_evec(l, sorted_indices, evecs)
+    row_sum = np.sum(Gram, axis = 1)
+    gamma = np.dot(alpha, row_sum)
     return gamma
 
-def reconstruction_error(x, X, y, k, K, **kwargs): 
+def reconstruction_error(index, k, Gram, sorted_indices, evecs): 
     '''
-    Calculate reconstruction_error for x
+    Calculate reconstruction_error for X[index]
     '''
-    N = len(y)
-    e_1 = K(x, x, **kwargs) - 2/N*np.sum([K(x, X[i], **kwargs) for i in range(N)]) + 1/(N*N)*np.sum([K(X[i], X[j], **kwargs) for i in range(N) for j in range(N)])
+    N = np.shape(Gram)[0]
+    e_1 = Gram[index][index] - 2/N*np.sum(Gram[index]) + 1/(N*N)*np.asmatrix(Gram).sum()
 
     e_2 = 0
     for i in range(k):
-        beta_i = get_beta(x, X, N, i, K, **kwargs)
-        gamma_i = get_gamma(X, N, i, K, **kwargs)
-        e_2 = e_2 + (beta_i*beta_i - 2*beta_i*gamma_i + gamma_i*gamma_i)
+        beta_i = get_beta(index, i, Gram, sorted_indices, evecs)
+        gamma_i = get_gamma(i, Gram, sorted_indices, evecs)
+        e_2 += np.square((beta_i - gamma_i))
 
     e_3 = 0
     for l in range(k):
         for m in range(k):
-            beta_l = get_beta(x, X, N, l, K, **kwargs) 
-            beta_m = get_beta(x, X, N, m, K, **kwargs)
-            gamma_l = get_gamma(X, N, l, K, **kwargs)
-            gamma_m = get_gamma(X, N, m, K, **kwargs)
-            alpha_l = get_kth_evec(X, l, N, K, **kwargs)
-            alpha_m = get_kth_evec(X, m, N, K, **kwargs)
-            temp = beta_l*beta_m - 2*beta_l*gamma_m + gamma_l*gamma_m
-            for i in range(N):
-                for j in range(N):
-                    e_3 = e_3 + temp * alpha_l[i] * alpha_m[j] * K(X[i], X[j], **kwargs)
-    e = e_1 + e_2 + e_3
-    return e
+            beta_l = get_beta(index, l, Gram, sorted_indices, evecs) 
+            beta_m = get_beta(index, m, Gram, sorted_indices, evecs)
+            gamma_l = get_gamma(l, Gram, sorted_indices, evecs)
+            gamma_m = get_gamma(m, Gram, sorted_indices, evecs)
+            alpha_l = get_kth_evec(l, sorted_indices, evecs)
+            alpha_m = get_kth_evec(m, sorted_indices, evecs)
+            temp_1 = beta_l*beta_m - 2*beta_l*gamma_m + gamma_l*gamma_m
+            dot = np.dot(alpha_m, Gram)
+            temp_2 = np.dot(alpha_l, dot)
+            e_3 += (temp_1 * temp_2)
 
-def store_error(file_path, X, y, k, K, **kwargs):
-    N = len(y)
-    mat = np.zeros(N)
-    for i in range(N):
-        mat[i] = reconstruction_error(X[i], X, y, k, K, **kwargs)
-    with open(file_path, 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        for row in mat:
-            writer.writerow(row)
-    csvfile.close()
-    return mat
+    e = e_1 - e_2 + e_3
+    return e
 
 def e_rescale(e, mu, sigma): 
     '''
     Rescale the reconstruction_error
     mu: mean, sigma: variance
     '''
-    temp = (e - mu) / sigma
+    temp = (e - mu) / sigma           
     if temp > 0:
         return temp
     else:
@@ -187,16 +165,41 @@ def FSVM_N_membership(X, y, k, sigma_N, K, **kwargs):
     '''
     X: data, y: label, K: kernel function, k: PCA dimension, sigma_N: parameter
     '''
-    N = len(y)
-    s = np.zeros(N)
-    e = np.zeros(N)
-    for i in range(N):
-        e[i] = reconstruction_error(X[i], X, y, k, K, **kwargs)
-        print(i, e[i])
-    sigma = np.mean(e)
-    mu = np.std(e, ddof = 1)
-    for i in range(N):
-        s[i] = np.exp(-1/(sigma_N*sigma_N) * e_rescale(e[i], mu, sigma))
+    X_pos, X_neg = split(X, y)
+    G_pos = G(X_pos, X_pos, **kwargs)
+    G_neg = G(X_neg, X_neg, **kwargs)
+    n_pos = np.shape(X_pos)[0]
+    n_neg = np.shape(X_neg)[0]       
+    s_pos = np.zeros(n_pos)
+    s_neg = np.zeros(n_neg)
+    e_pos = np.zeros(n_pos)
+    e_neg = np.zeros(n_neg)
+
+    evals_pos, evecs_pos = np.linalg.eig(G_pos)
+    sorted_indices_pos = np.argsort(evals_pos)
+    evals_neg, evecs_neg = np.linalg.eig(G_neg)
+    sorted_indices_neg = np.argsort(evals_neg)
+
+    temp = -1/(sigma_N * sigma_N)
+    print(evals_pos)
+
+    for i in range(n_pos):
+        e_pos[i] = reconstruction_error(i, k, G_pos, sorted_indices_pos, evecs_pos)
+    mu_pos = np.mean(e_pos)
+    sigma_pos = np.std(e_pos, ddof = 1)
+    for i in range(n_pos):
+        s_pos[i] = np.exp(temp * e_rescale(e_pos[i], mu_pos, sigma_pos))
+        print(s_pos[i])
+
+    for j in range(n_neg):
+        e_neg[j] = reconstruction_error(j, k, G_neg, sorted_indices_neg, evecs_neg)
+    mu_neg = np.mean(e_neg)
+    sigma_neg = np.std(e_neg, ddof = 1)
+    for j in range(n_neg):
+        s_neg[j] = np.exp(temp * e_rescale(e_neg[j], mu_neg, sigma_neg))
+        print(s_neg[j])
+
+    s = np.hstack((s_neg, s_pos))
     return s
 
 # 4. Membership based on anormaly detection
