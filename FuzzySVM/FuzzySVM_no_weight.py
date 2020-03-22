@@ -51,7 +51,7 @@ for ds in range(1):
             return -score
 
         # possible values of parameters
-        space = {'C': hp.loguniform('C', low = np.log(1e-7) , high = np.log(1e3)), 
+        space = {'C': hp.loguniform('C', low = np.log(1e-7) , high = np.log(1e2)), 
                 'gamma': hp.loguniform('gamma', low = np.log(1e-7) , high = np.log(1e5))}
 
         # trials will contain logging information

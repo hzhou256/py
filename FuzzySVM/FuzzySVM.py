@@ -4,11 +4,13 @@ sys.path.append(path)
 import csv
 import numpy as np
 import membership
+import membership_old_v
 import anomaly_detection
 from sklearn import svm
 from svmutil import *
 from sklearn import model_selection
 from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
+import collections
 
 
 def get_feature(file):
@@ -56,6 +58,7 @@ for ds in range(1):
         def svm_weight_ACC_1(params, X_svm = X_svm, y_svm = y_svm, X = X_train, y = y_train):
             params = {'C': params['C'], 'gamma': params['gamma'], 'delta': params['delta']}
             W = membership.class_center_membership(X, y, params['delta'])
+            print(W)
             prob = svm_problem(W, y_svm, X_svm)
             param = svm_parameter('-t 2 -c '+str(params['C'])+' -g '+str(params['gamma'])+' -v 5')
             score = svm_train(prob, param)
@@ -68,10 +71,20 @@ for ds in range(1):
             param = svm_parameter('-t 2 -c '+str(params['C'])+' -g '+str(params['gamma'])+' -v 5')
             score = svm_train(prob, param)
             return -score
+
+        def svm_weight_ACC_N(params, X_svm = X_svm, y_svm = y_svm, X = X_train, y = y_train):
+            params = {'C': params['C'], 'gamma': params['gamma'], 'sigmaN': params['sigmaN']}
+            W = membership.FSVM_N_membership(X, y, 2, params['sigmaN'], membership.gaussian, g = params['gamma'])
+            prob = svm_problem(W, y_svm, X_svm)
+            param = svm_parameter('-t 2 -c '+str(params['C'])+' -g '+str(params['gamma'])+' -v 5')
+            score = svm_train(prob, param)
+            return -score
         
         def svm_weight_ACC_gauss(params, X_svm = X_svm, y_svm = y_svm, X = X_train, y = y_train):
             params = {'C': params['C'], 'gamma': params['gamma']}
             W = membership.gauss_membership(X, y, False)
+            cnt = collections.Counter(W)
+            print(cnt)
             prob = svm_problem(W, y_svm, X_svm)
             param = svm_parameter('-t 2 -c '+str(params['C'])+' -g '+str(params['gamma'])+' -v 5')
             score = svm_train(prob, param)
@@ -84,35 +97,41 @@ for ds in range(1):
         space_2 = {'C': hp.loguniform('C', low = np.log(1e-7) , high = np.log(1e3)), 
                 'gamma': hp.loguniform('gamma', low = np.log(1e-7) , high = np.log(1e5)), 'delta': hp.loguniform('delta', low = np.log(1e-3) , high = np.log(1e3))}
 
+        space_N = {'C': hp.loguniform('C', low = np.log(1e-7) , high = np.log(1e3)), 
+                'gamma': hp.loguniform('gamma', low = np.log(1e-7) , high = np.log(1e5)), 'sigmaN': hp.loguniform('sigmaN', low = np.log(1e-3) , high = np.log(1e3))}
+
         space_gauss = {'C': hp.loguniform('C', low = np.log(1e-7) , high = np.log(1e3)), 'gamma': hp.loguniform('gamma', low = np.log(1e-7) , high = np.log(1e5))}
 
         # trials will contain logging information
         trials = Trials()
-        best = fmin(fn = svm_weight_ACC_gauss, # function to optimize
-                space = space_gauss,
+        best = fmin(fn = svm_weight_ACC_2, # function to optimize
+                space = space_2,
                 algo = tpe.suggest, # optimization algorithm, hyperotp will select its parameters automatically
                 max_evals = 100, # maximum number of iterations
                 trials = trials, # logging
                 )
         C = best['C']
         g = best['gamma']
-        #delta = best['delta']
+        delta = best['delta']
+        #sigmaN = best['sigmaN']
         print('C =', C)
         print('g =', g)
-        #print('delta =', delta)
+        print('delta =', delta)
+        #print('sigmaN =', sigmaN)
 
         #W = membership.class_center_membership(X_train, y_train, delta)
-        #W = membership.FSVM_2_membership(X_train, y_train, delta, membership.gaussian, g = g)
+        W = membership.FSVM_2_membership(X_train, y_train, delta, membership.gaussian, g = g)
         #with open('E:/Study/Bioinformatics/FuzzySVM/feature_matrix/' + name_ds +'/' + name + '/W_FSVM_2_' + name + '.csv', 'w', newline='') as csvfile:
         #    writer = csv.writer(csvfile)
         #    for row in W:
         #        writer.writerow(row)
         #csvfile.close()
 
-        W = membership.gauss_membership(X_train, y_train, False)
+        #W = membership.gauss_membership(X_train, y_train, False)
+        #W = membership.FSVM_N_membership(X_train, y_train, 2, sigmaN, membership.gaussian, g = g)
         prob = svm_problem(W, y_svm, X_svm)
         param = svm_parameter('-t 2 -c '+str(C)+' -g '+str(g))
         m = svm_train(prob, param)
-        #CV_ACC = svm_train(W, y, X, '-v 5')
+        #CV_ACC = svm_train(W, y_svm, X_svm, '-v 5')
         p_label, p_acc, p_val = svm_predict(y_test_svm, X_test_svm, m)
         print(p_acc[0])
