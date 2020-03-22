@@ -102,6 +102,17 @@ def get_kth_evec(k, sorted_indices, evecs):
     kth_evec = evecs[:,sorted_indices[-k]]
     return kth_evec
 
+def get_k(threshold, sorted_indices, evals):
+    evals_sort = np.sort(evals)
+    evals_sort = evals_sort[::-1]
+    Sum_evals = np.sum(evals_sort)
+    Sum = 0
+    for k in range(len(evals_sort)):
+        Sum += evals_sort[k]
+        if (Sum / Sum_evals) >= threshold:
+            break
+    return k+1
+
 def get_beta(index, j, Gram, sorted_indices, evecs): 
     '''
     Calculate beta_j
@@ -161,9 +172,9 @@ def e_rescale(e, mu, sigma):
     else:
         return 0
 
-def FSVM_N_membership(X, y, k, sigma_N, K, **kwargs): 
+def FSVM_N_membership(X, y, sigma_N, threshold, K, **kwargs): 
     '''
-    X: data, y: label, K: kernel function, k: PCA dimension, sigma_N: parameter
+    X: data, y: label, K: kernel function, sigma_N: parameter
     '''
     X_pos, X_neg = split(X, y)
     G_pos = G(X_pos, X_pos, **kwargs)
@@ -180,24 +191,25 @@ def FSVM_N_membership(X, y, k, sigma_N, K, **kwargs):
     evals_neg, evecs_neg = np.linalg.eig(G_neg)
     sorted_indices_neg = np.argsort(evals_neg)
 
+    k_pos = get_k(threshold, sorted_indices_pos, evals_pos)
+    k_neg = get_k(threshold, sorted_indices_neg, evals_neg)
+    print(k_neg, k_pos)
+
     temp = -1/(sigma_N * sigma_N)
-    print(evals_pos)
 
     for i in range(n_pos):
-        e_pos[i] = reconstruction_error(i, k, G_pos, sorted_indices_pos, evecs_pos)
+        e_pos[i] = reconstruction_error(i, k_pos, G_pos, sorted_indices_pos, evecs_pos)
     mu_pos = np.mean(e_pos)
     sigma_pos = np.std(e_pos, ddof = 1)
     for i in range(n_pos):
         s_pos[i] = np.exp(temp * e_rescale(e_pos[i], mu_pos, sigma_pos))
-        print(s_pos[i])
 
     for j in range(n_neg):
-        e_neg[j] = reconstruction_error(j, k, G_neg, sorted_indices_neg, evecs_neg)
+        e_neg[j] = reconstruction_error(j, k_neg, G_neg, sorted_indices_neg, evecs_neg)
     mu_neg = np.mean(e_neg)
     sigma_neg = np.std(e_neg, ddof = 1)
     for j in range(n_neg):
         s_neg[j] = np.exp(temp * e_rescale(e_neg[j], mu_neg, sigma_neg))
-        print(s_neg[j])
 
     s = np.hstack((s_neg, s_pos))
     return s

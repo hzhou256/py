@@ -71,7 +71,7 @@ for ds in range(1):
 
         def svm_weight_ACC_N(params, X_svm = X_svm, y_svm = y_svm, X = X_train, y = y_train):
             params = {'C': params['C'], 'gamma': params['gamma'], 'sigmaN': params['sigmaN']}
-            W = membership.FSVM_N_membership(X, y, 5, params['sigmaN'], membership.gaussian, g = params['gamma'])
+            W = membership.FSVM_N_membership(X, y, params['sigmaN'], 0.80, membership.gaussian, g = params['gamma'])
             prob = svm_problem(W, y_svm, X_svm)
             param = svm_parameter('-t 2 -c '+str(params['C'])+' -g '+str(params['gamma'])+' -v 5')
             score = svm_train(prob, param)
@@ -119,7 +119,7 @@ for ds in range(1):
         #W = membership.class_center_membership(X_train, y_train, delta)
         #W = membership.FSVM_2_membership(X_train, y_train, delta, membership.gaussian, g = g)  
         #W = membership.gauss_membership(X_train, y_train, False)
-        W = membership.FSVM_N_membership(X_train, y_train, 5, sigmaN, membership.gaussian, g = g)
+        W = membership.FSVM_N_membership(X_train, y_train, sigmaN, 0.80, membership.gaussian, g = g)
         prob = svm_problem(W, y_svm, X_svm)
         param = svm_parameter('-t 2 -c '+str(C)+' -g '+str(g))
         m = svm_train(prob, param)
