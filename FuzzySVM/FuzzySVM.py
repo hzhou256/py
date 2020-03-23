@@ -22,8 +22,8 @@ dataset_name = ['Antifp_Main', 'Antifp_DS1', 'Antifp_DS2']
 for ds in range(1):
     name_ds = dataset_name[ds]
     print('dataset:', name_ds)
-    methods_name = ['188-bit', 'AAC', 'ASDC', 'CKSAAP', 'CTD', 'DPC']
-    for it in range(5,6):
+    methods_name = ['AAC', 'ASDC', 'CKSAAP', 'DPC']
+    for it in range(3,4):
         name = methods_name[it]
         print(name + ':')
 
@@ -55,7 +55,6 @@ for ds in range(1):
         def svm_weight_ACC_1(params, X_svm = X_svm, y_svm = y_svm, X = X_train, y = y_train):
             params = {'C': params['C'], 'gamma': params['gamma'], 'delta': params['delta']}
             W = membership.class_center_membership(X, y, params['delta'])
-            print(W)
             prob = svm_problem(W, y_svm, X_svm)
             param = svm_parameter('-t 2 -c '+str(params['C'])+' -g '+str(params['gamma'])+' -v 5')
             score = svm_train(prob, param)
@@ -101,25 +100,25 @@ for ds in range(1):
 
         # trials will contain logging information
         trials = Trials()
-        best = fmin(fn = svm_weight_ACC_N, # function to optimize
-                space = space_N,
+        best = fmin(fn = svm_weight_ACC_1, # function to optimize
+                space = space_1,
                 algo = tpe.suggest, # optimization algorithm, hyperotp will select its parameters automatically
                 max_evals = 100, # maximum number of iterations
                 trials = trials, # logging
                 )
         C = best['C']
         g = best['gamma']
-        #delta = best['delta']
-        sigmaN = best['sigmaN']
+        delta = best['delta']
+        #sigmaN = best['sigmaN']
         print('C =', C)
         print('g =', g)
-        #print('delta =', delta)
-        print('sigmaN =', sigmaN)
+        print('delta =', delta)
+        #print('sigmaN =', sigmaN)
 
-        #W = membership.class_center_membership(X_train, y_train, delta)
+        W = membership.class_center_membership(X_train, y_train, delta)
         #W = membership.FSVM_2_membership(X_train, y_train, delta, membership.gaussian, g = g)  
         #W = membership.gauss_membership(X_train, y_train, False)
-        W = membership.FSVM_N_membership(X_train, y_train, sigmaN, 0.80, membership.gaussian, g = g)
+        #W = membership.FSVM_N_membership(X_train, y_train, sigmaN, 0.80, membership.gaussian, g = g)
         prob = svm_problem(W, y_svm, X_svm)
         param = svm_parameter('-t 2 -c '+str(C)+' -g '+str(g))
         m = svm_train(prob, param)
