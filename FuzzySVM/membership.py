@@ -241,11 +241,10 @@ def gaussian_membership(X, mu, sigma2):
     X = X - mu
     temp = np.linalg.det(sigma2) # 数值过小
     p1 = np.power(np.power(2*np.pi, n)*temp, -1/2)
-    print(p1)
+    print(temp)
     e = np.diag(X.dot(np.linalg.inv(sigma2)).dot(X.T))  # 取对角元素，类似与方差，而不要协方差
     p2 = np.exp(-0.5*e)
     return p1 * p2
-    #return np.exp(-p1 * p2)
 
 def gauss_membership(X, y, useMultivariate):
     X_pos, X_neg = split(X, y)
