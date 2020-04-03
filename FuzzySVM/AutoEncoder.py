@@ -16,22 +16,19 @@ def get_feature(file):
 def recon_error(x, r):
     return (np.linalg.norm(x - r))**2
 
-dataset_name = ['Antifp_Main', 'Antifp_DS1', 'Antifp_DS2']
 for ds in range(1):
-    name_ds = dataset_name[ds]
-    print('dataset:', name_ds)
-    methods_name = ['188-bit', 'AAC', 'ASDC', 'CKSAAP', 'DPC']
-    for it in range(0,1):
+    methods_name = ['AAC', 'ASDC', 'CKSAAP', 'DPC']
+    for it in range(0, 1):
         name = methods_name[it]
         print(name + ':')
 
-        f1 = np.loadtxt('E:/Study/Bioinformatics/FuzzySVM/feature_matrix/' + name_ds +'/' + name + '/train_' + name + '.csv', delimiter = ',', skiprows = 1)
-        f2 = np.loadtxt('E:/Study/Bioinformatics/FuzzySVM/feature_matrix/' + name_ds + '/train_label.csv', delimiter = ',')
+        f1 = np.loadtxt('E:/Study/Bioinformatics/FuzzySVM/feature_matrix/' + name + '/train_' + name + '.csv', delimiter = ',', skiprows = 1)
+        f2 = np.loadtxt('E:/Study/Bioinformatics/FuzzySVM/feature_matrix/train_label.csv', delimiter = ',')
         X_train = get_feature(f1)
         y_train = f2
 
-        f3 = np.loadtxt('E:/Study/Bioinformatics/FuzzySVM/feature_matrix/' + name_ds +'/' + name + '/test_' + name + '.csv', delimiter = ',', skiprows = 1)
-        f4 = np.loadtxt('E:/Study/Bioinformatics/FuzzySVM/feature_matrix/' + name_ds + '/test_label.csv', delimiter = ',')
+        f3 = np.loadtxt('E:/Study/Bioinformatics/FuzzySVM/feature_matrix/' + name + '/test_' + name + '.csv', delimiter = ',', skiprows = 1)
+        f4 = np.loadtxt('E:/Study/Bioinformatics/FuzzySVM/feature_matrix/test_label.csv', delimiter = ',')
         X_test = get_feature(f3)
         y_test = f4
 
