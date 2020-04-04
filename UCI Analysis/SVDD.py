@@ -41,7 +41,7 @@ def split(X, y):
             k = k + 1
     return X_pos, X_neg
 
-def QQP_solver(Gram, C):
+def QP_solver(Gram, C):
     l = np.shape(Gram)[0]
     P = 2 * matrix(Gram)
     diag = np.zeros((l, 1))
@@ -74,15 +74,17 @@ def get_distance_2(index, Gram, alpha):
     d_square = temp_1 - 2 * temp_2 + temp_3
     return d_square
 
-def SVDD_membership(X, y, K, g, C):
+def SVDD_membership(X, y, g, C):
     X_pos, X_neg = split(X, y)
     G_pos = G(X_pos, X_pos, g)
     G_neg = G(X_neg, X_neg, g)
     n_pos = np.shape(X_pos)[0]
     n_neg = np.shape(X_neg)[0]
-
-    alpha_pos = np.reshape(QQP_solver(G_pos, C), (n_pos, 1))
-    alpha_neg = np.reshape(QQP_solver(G_neg, C), (n_neg, 1))
+    try:
+        alpha_pos = np.reshape(QP_solver(G_pos, C), (n_pos, 1))
+        alpha_neg = np.reshape(QP_solver(G_neg, C), (n_neg, 1))
+    except ValueError:
+        return []
     D_2_pos = np.reshape([get_distance_2(i, G_pos, alpha_pos) for i in range(n_pos)], (n_pos, 1))
     D_2_neg = np.reshape([get_distance_2(i, G_neg, alpha_neg) for i in range(n_neg)], (n_neg, 1))
     D_pos = np.sqrt(D_2_pos)
@@ -96,6 +98,5 @@ def SVDD_membership(X, y, K, g, C):
     s_pos = np.reshape([np.sqrt((1 - (D_pos[i] - d_pos_min)/(d_pos_max - d_pos_min))) for i in range(n_pos)], (n_pos, 1))
     s_neg = np.reshape([np.sqrt((1 - (D_neg[i] - d_neg_min)/(d_neg_max - d_neg_min))) for i in range(n_neg)], (n_neg, 1))
     s = np.row_stack((s_neg, s_pos))
-    print(np.shape(s))
     return s
 
