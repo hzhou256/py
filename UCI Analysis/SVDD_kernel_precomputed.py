@@ -1,18 +1,9 @@
 import numpy as np
 import collections
 from scipy.spatial.distance import cdist
-import numba
 from cvxopt import matrix, solvers
 
 
-@numba.jit(nopython = True, fastmath = True) 
-def gaussian(vec1, vec2, g):
-    k = np.exp(-g*np.square((np.linalg.norm(vec1 - vec2))))
-    return k
-
-def G(X, Y, g):
-    K = cdist(X, Y, gaussian, g = g)
-    return K
 
 def split(X, y): 
     '''
@@ -74,12 +65,14 @@ def get_distance_2(index, Gram, alpha):
     d_square = temp_1 - 2 * temp_2 + temp_3
     return d_square
 
-def SVDD_membership(X, y, g, C):
+def SVDD_membership(X, y, Gram, C):
     X_pos, X_neg = split(X, y)
-    G_pos = G(X_pos, X_pos, g)
-    G_neg = G(X_neg, X_neg, g)
     n_pos = np.shape(X_pos)[0]
     n_neg = np.shape(X_neg)[0]
+    G_neg = Gram[0:n_neg]
+    G_neg = G_neg[:, 0:n_neg]
+    G_pos = Gram[n_neg:]
+    G_pos = G_pos[:, n_neg:]
     try:
         alpha_pos = np.reshape(QP_solver(G_pos, C), (n_pos, 1))
         alpha_neg = np.reshape(QP_solver(G_neg, C), (n_neg, 1))
