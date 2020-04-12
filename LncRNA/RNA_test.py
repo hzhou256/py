@@ -11,22 +11,19 @@ def get_feature(file):
     for index in range(m):
         data[index] = file[index][1:]
     return data
-dataset = ['ionosphere', 'german']
-name = dataset[1]
 
-f1 = np.loadtxt('E:/Study/Bioinformatics/UCI/' + name + '/X_train.csv', delimiter = ',', skiprows = 1)
+
+f1 = np.loadtxt('E:/Study/Bioinformatics/RNA/dataset/train.csv', delimiter = ',', skiprows = 1)
 X_train = get_feature(f1)
 y_train = f1[:, 0]
 
-f2 = np.loadtxt('E:/Study/Bioinformatics/UCI/' + name + '/X_test.csv', delimiter = ',', skiprows = 1)
+f2 = np.loadtxt('E:/Study/Bioinformatics/RNA/dataset/test.csv', delimiter = ',', skiprows = 1)
 X_test = get_feature(f2)
 y_test = f2[:, 0]
-'''
-scaler = preprocessing.MinMaxScaler().fit(X_train)
-X_train = scaler.transform(X_train)
-X_test = scaler.transform(X_test)
-'''
-parameters = {'C': np.logspace(-5, 15, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21)}
+
+
+
+parameters = {'C': np.logspace(-5, 15, base = 2, num = 21), 'gamma': np.logspace(3, -15, base = 2, num = 19)}
 grid = GridSearchCV(My_Fuzzy_SVM.FSVM_Classifier(membership = 'SVDD'), parameters, n_jobs = -1, cv = 5, verbose = 1)
 grid.fit(X_train, y_train)
 gamma = grid.best_params_['gamma']
