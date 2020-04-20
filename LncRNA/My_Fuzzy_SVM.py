@@ -2,13 +2,14 @@ import sys
 path = 'D:/Program Files/libsvm_weights-3.23/python'
 sys.path.append(path)
 import membership
+import numpy as np
 from svmutil import *
 from sklearn.base import BaseEstimator, ClassifierMixin
 
 class FSVM_Classifier(BaseEstimator, ClassifierMixin):  
     """Fuzzy SVM Classifier"""
 
-    def __init__(self, C = 1, gamma = 0.5, membership = 'None', W = [], kernel = 'rbf'):
+    def __init__(self, C = 1, gamma = 0.5, nu = 0.5, membership = 'None', W = [], kernel = 'rbf'):
         """
         Called when initializing the classifier
         """
@@ -18,10 +19,11 @@ class FSVM_Classifier(BaseEstimator, ClassifierMixin):
         self.W = W
         self.kernel = kernel
         self.delta = 0.001
+        self.nu = nu
 
     def cal_membership(self, X, y):
         if self.membership == 'SVDD':
-            W = membership.SVDD_membership(X, y, g = self.gamma, C = self.C)
+            W = membership.SVDD_membership(X, y, g = self.gamma, C = self.nu)
         elif self.membership == 'None':
             W = []
         elif self.membership == 'precomputed':
@@ -49,3 +51,12 @@ class FSVM_Classifier(BaseEstimator, ClassifierMixin):
         self.p_label, self.p_acc, self.p_val = svm_predict(y, X, self.model, '-b 1 -q')
         return self.p_label
 
+    def predict_proba(self, X, y = []):
+        self.p_label, self.p_acc, self.p_val = svm_predict(y, X, self.model, '-b 1 -q')
+        self.y_proba = np.reshape(self.p_val, (len(self.p_val), 2))
+        return self.y_proba
+
+    def decision_function(self, X, y = []):
+        self.p_label, self.p_acc, self.p_val = svm_predict(y, X, self.model, '-b 1 -q')
+        self.y_proba = np.reshape(self.p_val, (len(self.p_val), 2))
+        return self.y_proba[:, 1]

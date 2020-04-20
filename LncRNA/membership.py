@@ -274,7 +274,7 @@ def gauss_membership(X, y, useMultivariate):
     return w
 
 
-# SVDD membership
+# My SVDD membership
 def QP_solver(Gram, C):
     l = np.shape(Gram)[0]
     P = 2 * matrix(Gram)

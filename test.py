@@ -1,10 +1,11 @@
 import numpy as np
-import csv
+from matplotlib import pyplot as plt
 
 
-A = np.random.randint(0, 10, (100, 100))
-with open('E:/高性能计算实践/test.txt', 'w', newline='') as csvfile:
-    writer = csv.writer(csvfile)
-    for row in A:
-        writer.writerow(row)
-csvfile.close()
+# 生成训练数据
+X = 0.3 * np.random.randn(1000, 2)
+X_train = np.r_[X+2, X-2]
+
+plt.scatter(X[:,0], X[:,1])
+plt.show()
+
