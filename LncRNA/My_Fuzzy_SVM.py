@@ -26,18 +26,19 @@ class FSVM_Classifier(BaseEstimator, ClassifierMixin):
             W = membership.SVDD_membership(X, y, g = self.gamma, C = self.nu)
         elif self.membership == 'None':
             W = []
-        elif self.membership == 'precomputed':
-            W = self.W
         elif self.membership == 'FSVM_2':
             W = membership.FSVM_2_membership(X, y, self.delta, membership.gaussian, g = self.gamma)
         return W
 
-    def fit(self, X, y):
+    def fit(self, X, y, Weight = []):
         """
         This should fit classifier.
 
         """
-        W = self.cal_membership(X, y)
+        if self.membership == 'precomputed':
+            W = Weight
+        else:
+            W = self.cal_membership(X, y)
         if self.kernel == 'rbf':
             prob = svm_problem(W = W, y = y, x = X)
             param = svm_parameter('-t 2 -c '+str(self.C)+' -g '+str(self.gamma) + ' -b 1 -q')

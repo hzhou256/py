@@ -2,15 +2,11 @@ import sys
 path='D:/Program Files/libsvm_weights-3.23/python'
 sys.path.append(path)
 import numpy as np
-import membership
-from sklearn import preprocessing
-from svmutil import *
-from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
+import membership, My_Fuzzy_SVM
 from sklearn import metrics
 from imblearn.metrics import specificity_score
+from sklearn.model_selection import GridSearchCV, cross_validate
 
-
-delta = 0.001
 
 def get_feature(file):
     m = np.shape(file)[0]
@@ -32,73 +28,55 @@ f2 = np.loadtxt('E:/Study/Bioinformatics/UCI/' + name + '/X_test.csv', delimiter
 X_test = get_feature(f2)
 y_test = f2[:, 0]
 
+#parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21), 'nu': np.linspace(0, 1, num = 10)}
+parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21), 'nu': [0.1,0.2,0.3,0.4,0.5]}
+#parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21)}
+grid = GridSearchCV(My_Fuzzy_SVM.FSVM_Classifier(membership = 'SVDD'), parameters, n_jobs = -1, cv = 5, verbose = 1)
+#grid = GridSearchCV(My_Fuzzy_SVM.FSVM_Classifier(membership = 'None'), parameters, n_jobs = -1, cv = 5, verbose = 1)
+grid.fit(X_train, y_train)
+gamma = grid.best_params_['gamma']
+C = grid.best_params_['C']
+nu = grid.best_params_['nu']
 
-y_svm, X_svm = svm_read_problem('E:/Study/Bioinformatics/UCI/' + name + '/X_train.svm')
-y_test_svm, X_test_svm = svm_read_problem('E:/Study/Bioinformatics/UCI/' + name + '/X_test.svm')
+clf = My_Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, nu = nu, membership = 'SVDD')
+#clf = My_Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, membership = 'None')
+clf.fit(X_train, y_train)
 
+scorerMCC = metrics.make_scorer(metrics.matthews_corrcoef)
+scorerSP = metrics.make_scorer(specificity_score)
+scorerPR = metrics.make_scorer(metrics.precision_score)
+scorerSE = metrics.make_scorer(metrics.recall_score)
+scorer = {'ACC':'accuracy', 'recall':scorerSE, 'roc_auc': 'roc_auc', 'MCC':scorerMCC, 'SP':scorerSP}
+five_fold = cross_validate(clf, X_train, y_train, cv = 5, scoring = scorer)
+mean_ACC = np.mean(five_fold['test_ACC'])
+mean_sensitivity = np.mean(five_fold['test_recall'])
+mean_AUC = np.mean(five_fold['test_roc_auc'])
+mean_MCC = np.mean(five_fold['test_MCC'])
+mean_SP = np.mean(five_fold['test_SP'])
 
-def svm_weight_ACC(params, X = X_svm, y = y_svm, W = []):
-    params = {'C': params['C'], 'gamma': params['gamma']}
-    prob = svm_problem(W, y, X)
-    param = svm_parameter('-t 2 -c '+str(params['C'])+' -g '+str(params['gamma'])+' -v 10')
-    score = svm_train(prob, param)
-    return -score
+print('five fold:')
+print('SN =', mean_sensitivity)
+print('SP =', mean_SP)
+print('ACC =', mean_ACC)
+print('MCC = ', mean_MCC)
+print('AUC = ', mean_AUC)
 
-def svm_weight_ACC_2(params, X_svm = X_svm, y_svm = y_svm, X = X_train, y = y_train):
-    params = {'C': params['C'], 'gamma': params['gamma']}
-    W = membership.FSVM_2_membership(X, y, delta, membership.gaussian, g = params['gamma'])
-    #print(W)
-    prob = svm_problem(W, y_svm, X_svm)
-    param = svm_parameter('-t 2 -c '+str(params['C'])+' -g '+str(params['gamma'])+' -v 10')
-    score = svm_train(prob, param)
-    return -score
+y_pred = clf.predict(X_test)
+ACC = metrics.accuracy_score(y_test, y_pred)
+precision = metrics.precision_score(y_test, y_pred)
+sensitivity = metrics.recall_score(y_test, y_pred)
+specificity = specificity_score(y_test, y_pred)
+AUC = metrics.roc_auc_score(y_test, clf.decision_function(X_test))
+MCC = metrics.matthews_corrcoef(y_test, y_pred)
 
-def svm_weight_ACC_N(params, X_svm = X_svm, y_svm = y_svm, X = X_train, y = y_train):
-    params = {'C': params['C'], 'gamma': params['gamma'], 'sigmaN': params['sigmaN']}
-    W = membership.FSVM_N_membership(X, y, params['sigmaN'], 0.90, membership.gaussian, g = params['gamma'])
-    print(W)
-    prob = svm_problem(W, y_svm, X_svm)
-    param = svm_parameter('-t 2 -c '+str(params['C'])+' -g '+str(params['gamma'])+' -v 10')
-    score = svm_train(prob, param)
-    return -score
-
-space = {'C': hp.loguniform('C', low = np.log(1e-7) , high = np.log(1e3)), 'gamma': hp.loguniform('gamma', low = np.log(1e-7) , high = np.log(1e5))}
-
-space_N = {'C': hp.loguniform('C', low = np.log(1e-7) , high = np.log(1e3)), 
-        'gamma': hp.loguniform('gamma', low = np.log(1e-7) , high = np.log(1e5)), 'sigmaN': hp.loguniform('sigmaN', low = np.log(1e-3) , high = np.log(1e3))}
-
-trials = Trials()
-best = fmin(fn = svm_weight_ACC_N, 
-        space = space_N,
-        algo = tpe.suggest, 
-        max_evals = 100, 
-        trials = trials,
-        )
-C = best['C']
-g = best['gamma']
-
-#W = []
-#W = membership.FSVM_2_membership(X_train, y_train, delta, membership.gaussian, g = g)  
-W = membership.FSVM_N_membership(X_train, y_train, sigmaN, 0.85, membership.gaussian, g = g)
-prob = svm_problem(W, y_svm, X_svm)
-param = svm_parameter('-t 2 -c '+str(C)+' -g '+str(g) + ' -b 1')
-m = svm_train(prob, param)
-p_label, p_acc, p_val = svm_predict(y_test_svm, X_test_svm, m, '-b 1')
-y_prob = np.reshape([p_val[i][0] for i in range(np.shape(p_val)[0])], (np.shape(p_val)[0], 1))
-
-ACC = metrics.accuracy_score(y_test, p_label)
-precision = metrics.precision_score(y_test, p_label)
-sensitivity = metrics.recall_score(y_test, p_label)
-specificity = specificity_score(y_test, p_label)
-AUC = metrics.roc_auc_score(y_test, y_prob)
-MCC = metrics.matthews_corrcoef(y_test, p_label)
-
-print('C =', C)
-print('g =', g)
-#print('sigmaN =', sigmaN)
-
+print('Testing set:')
 print('SN =', sensitivity)
 print('SP =', specificity)
-print('ACC =', p_acc[0])
+print('ACC =', ACC)
 print('MCC =', MCC)
 print('AUC =', AUC)
+
+
+print('C = ', C)
+print('g = ', gamma)
+print('nu =', nu)

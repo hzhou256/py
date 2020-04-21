@@ -3,13 +3,11 @@ path='D:/Program Files/libsvm_weights-3.23/python'
 sys.path.append(path)
 import numpy as np
 import numba
-import SVDD_kernel_precomputed
-from svmutil import *
+import membership, My_Fuzzy_SVM
 from scipy.spatial.distance import cdist
-from cvxopt import matrix, solvers
-from sklearn.model_selection import GridSearchCV
-from sklearn import svm, model_selection, preprocessing
-from hyperopt import fmin, tpe, rand, hp, STATUS_OK, Trials
+from sklearn.model_selection import GridSearchCV, cross_validate
+from sklearn import svm, preprocessing, metrics
+from imblearn.metrics import specificity_score
 
 
 @numba.jit(nopython = True, fastmath = True) 
@@ -93,28 +91,52 @@ K_test = (K_test_gauss + K_test_linear + K_test_poly) / 3
 K_train_SVM = np.column_stack((index_column_train, K_train))
 K_test_SVM = np.column_stack((index_column_test, K_test))
 
-def svm_weight_ACC(params, X = X_train, y = y_train, K_svm = K_train_SVM):
-    params = {'C': params['C']}
-    W = SVDD_kernel_precomputed.SVDD_membership(X_train, y_train, K_train, params['C'])
-    #W = []
-    prob = svm_problem(y = y_train, x = K_svm, W = W, isKernel = True)
-    param = svm_parameter('-t 4 -c '+str(params['C'])+' -v 5')
-    score = svm_train(prob, param)
-    return -score
-space = {'C': hp.loguniform('C', low = np.log(1e-5), high = np.log(1e3))}
-trials = Trials()
-best = fmin(fn = svm_weight_ACC,
-        space = space,
-        algo = tpe.suggest,
-        max_evals = 100,
-        trials = trials,
-        )
-C = best['C']
-
-W = SVDD_kernel_precomputed.SVDD_membership(X_train, y_train, K_train, C)
+nu = 0.5
+W = membership.SVDD_kernel(X_train, y_train, K_train, C = nu)
 #W = []
-prob  = svm_problem(y = y_train, x = K_train_SVM, W = W, isKernel = True)
-param = svm_parameter('-t 4 -c '+str(C)+' -b 1')
-m = svm_train(prob, param)
-print(C)
-p_label, p_acc, p_val = svm_predict(y_test, K_test_SVM, m, '-b 1')
+parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21)}
+grid = GridSearchCV(My_Fuzzy_SVM.FSVM_Classifier(W = W, kernel = 'precomputed', membership = 'precomputed'), parameters, n_jobs = -1, cv = 5, verbose = 1)
+grid.fit(K_train_SVM, y_train, W)
+gamma = grid.best_params_['gamma']
+C = grid.best_params_['C']
+
+clf = My_Fuzzy_SVM.FSVM_Classifier(W = W, C = C, gamma = gamma, membership = 'precomputed', kernel = 'precomputed')
+clf.fit(K_train_SVM, y_train, W)
+
+scorerMCC = metrics.make_scorer(metrics.matthews_corrcoef)
+scorerSP = metrics.make_scorer(specificity_score)
+scorerPR = metrics.make_scorer(metrics.precision_score)
+scorerSE = metrics.make_scorer(metrics.recall_score)
+scorer = {'ACC':'accuracy', 'recall':scorerSE, 'roc_auc': 'roc_auc', 'MCC':scorerMCC, 'SP':scorerSP}
+five_fold = cross_validate(clf, K_train_SVM, y_train, cv = 5, scoring = scorer)
+mean_ACC = np.mean(five_fold['test_ACC'])
+mean_sensitivity = np.mean(five_fold['test_recall'])
+mean_AUC = np.mean(five_fold['test_roc_auc'])
+mean_MCC = np.mean(five_fold['test_MCC'])
+mean_SP = np.mean(five_fold['test_SP'])
+
+print('five fold:')
+print('SN =', mean_sensitivity)
+print('SP =', mean_SP)
+print('ACC =', mean_ACC)
+print('MCC = ', mean_MCC)
+print('AUC = ', mean_AUC)
+
+y_pred = clf.predict(K_test_SVM)
+ACC = metrics.accuracy_score(y_test, y_pred)
+precision = metrics.precision_score(y_test, y_pred)
+sensitivity = metrics.recall_score(y_test, y_pred)
+specificity = specificity_score(y_test, y_pred)
+AUC = metrics.roc_auc_score(y_test, clf.decision_function(K_test_SVM))
+MCC = metrics.matthews_corrcoef(y_test, y_pred)
+
+print('Testing set:')
+print('SN =', sensitivity)
+print('SP =', specificity)
+print('ACC =', ACC)
+print('MCC =', MCC)
+print('AUC =', AUC)
+
+
+print('C = ', C)
+print('nu =', nu)

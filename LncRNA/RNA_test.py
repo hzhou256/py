@@ -24,7 +24,8 @@ y_test = f2[:, 0]
 
 
 
-parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21), 'nu': np.linspace(0, 1, num = 10)}
+#parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21), 'nu': np.linspace(0, 1, num = 10)}
+parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21), 'nu': [0.5]}
 grid = GridSearchCV(My_Fuzzy_SVM.FSVM_Classifier(membership = 'SVDD'), parameters, n_jobs = -1, cv = 5, verbose = 1)
 grid.fit(X_train, y_train)
 gamma = grid.best_params_['gamma']
@@ -72,3 +73,4 @@ print('AUC =', AUC)
 
 print('C = ', C)
 print('g = ', gamma)
+print('nu =', nu)

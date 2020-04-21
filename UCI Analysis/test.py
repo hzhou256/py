@@ -8,6 +8,7 @@ from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import collections
 
+delta = 0.001
 
 def get_feature(file):
     m = np.shape(file)[0]
@@ -17,11 +18,15 @@ def get_feature(file):
         data[index] = file[index][1:]
     return data
 
-np.set_printoptions(suppress = True)
-f1 = np.loadtxt('E:/Study/Bioinformatics/RNA/dataset/train.csv', delimiter = ',', skiprows = 1)
+
+dataset = ['ionosphere', 'german']
+name = dataset[1]
+
+f1 = np.loadtxt('E:/Study/Bioinformatics/UCI/' + name + '/X_train.csv', delimiter = ',', skiprows = 1)
 X_train = get_feature(f1)
 y_train = f1[:, 0]
-f2 = np.loadtxt('E:/Study/Bioinformatics/RNA/dataset/test.csv', delimiter = ',', skiprows = 1)
+
+f2 = np.loadtxt('E:/Study/Bioinformatics/UCI/' + name + '/X_test.csv', delimiter = ',', skiprows = 1)
 X_test = get_feature(f2)
 y_test = f2[:, 0]
 
@@ -30,12 +35,12 @@ X_tsne = tsne.fit_transform(X_train)
 
 cnt = dict(collections.Counter(y_train))
 n_pos = cnt[1]
-n_neg = cnt[0]
+n_neg = cnt[2]
 X_tsne_pos = np.zeros((n_pos, 2)) 
 X_tsne_neg = np.zeros((n_neg, 2)) 
 j, k = 0, 0
 for i in range(len(y_train)):
-    if y_train[i] == 0:
+    if y_train[i] == 2:
         X_tsne_neg[j] = X_tsne[i]
         j = j + 1
     else:
