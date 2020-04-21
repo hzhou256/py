@@ -94,13 +94,12 @@ K_test_SVM = np.column_stack((index_column_test, K_test))
 nu = 0.5
 W = membership.SVDD_kernel(X_train, y_train, K_train, C = nu)
 #W = []
-parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21)}
+parameters = {'C': np.logspace(-10, 10, base = 2, num = 21)}
 grid = GridSearchCV(My_Fuzzy_SVM.FSVM_Classifier(W = W, kernel = 'precomputed', membership = 'precomputed'), parameters, n_jobs = -1, cv = 5, verbose = 1)
 grid.fit(K_train_SVM, y_train, W)
-gamma = grid.best_params_['gamma']
 C = grid.best_params_['C']
 
-clf = My_Fuzzy_SVM.FSVM_Classifier(W = W, C = C, gamma = gamma, membership = 'precomputed', kernel = 'precomputed')
+clf = My_Fuzzy_SVM.FSVM_Classifier(W = W, C = C, membership = 'precomputed', kernel = 'precomputed')
 clf.fit(K_train_SVM, y_train, W)
 
 scorerMCC = metrics.make_scorer(metrics.matthews_corrcoef)

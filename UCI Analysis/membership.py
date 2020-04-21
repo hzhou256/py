@@ -3,6 +3,9 @@ import collections
 from scipy.spatial.distance import cdist
 import numba
 from cvxopt import matrix, solvers
+from sklearn import svm, preprocessing
+
+
 
 delta = 0.001
 
@@ -363,3 +366,24 @@ def SVDD_kernel(X, y, Gram, C):
     s_neg = np.reshape([np.sqrt((1 - (D_neg[i] - d_neg_min)/(d_neg_max - d_neg_min))) for i in range(n_neg)], (n_neg, 1))
     s = np.row_stack((s_neg, s_pos))
     return s
+
+# OneclassSVM 
+def OCSVM_membership(X, y, g):
+    X_pos, X_neg = split(X, y)
+
+    clf_pos = svm.OneClassSVM(kernel = 'rbf', gamma = g)
+    clf_pos.fit(X_pos)
+    d_pos = clf_pos.score_samples(X_pos)
+    d_pos_scale = preprocessing.MinMaxScaler().fit_transform(d_pos.reshape(-1, 1))
+
+    clf_neg = svm.OneClassSVM(kernel = 'rbf', gamma = g)
+    clf_neg.fit(X_neg)
+    d_neg = clf_neg.score_samples(X_neg)
+    d_neg_scale = preprocessing.MinMaxScaler().fit_transform(d_neg.reshape(-1, 1))
+
+    s_pos = np.sqrt(1 - d_pos_scale)
+    s_neg = np.sqrt(1 - d_neg_scale)
+
+    s = np.row_stack((s_neg, s_pos))
+    return s
+    
