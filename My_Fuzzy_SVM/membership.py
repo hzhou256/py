@@ -344,19 +344,17 @@ def SVDD_membership(X, y, g, C):
         alpha_pos = np.reshape(QP_solver(G_pos, C), (n_pos, 1))
         alpha_neg = np.reshape(QP_solver(G_neg, C), (n_neg, 1))
     except ValueError:
-        return []
+        return np.ones((n_neg + n_pos, 1))
     D_2_pos = np.reshape([get_distance_2(i, G_pos, alpha_pos) for i in range(n_pos)], (n_pos, 1))
     D_2_neg = np.reshape([get_distance_2(i, G_neg, alpha_neg) for i in range(n_neg)], (n_neg, 1))
-    D_pos = np.sqrt(D_2_pos)
-    D_neg = np.sqrt(D_2_neg)
+    d_pos = np.sqrt(D_2_pos)
+    d_neg = np.sqrt(D_2_neg)
 
-    d_pos_max = np.max(D_pos)
-    d_pos_min = np.min(D_pos)
-    d_neg_max = np.max(D_neg)
-    d_neg_min = np.min(D_neg)
+    d_pos_scale = preprocessing.MinMaxScaler().fit_transform(d_pos)
+    d_neg_scale = preprocessing.MinMaxScaler().fit_transform(d_neg)
 
-    s_pos = np.reshape([np.sqrt((1 - (D_pos[i] - d_pos_min)/(d_pos_max - d_pos_min))) for i in range(n_pos)], (n_pos, 1))
-    s_neg = np.reshape([np.sqrt((1 - (D_neg[i] - d_neg_min)/(d_neg_max - d_neg_min))) for i in range(n_neg)], (n_neg, 1))
+    s_pos = np.reshape(np.sqrt(np.abs(1 - d_pos_scale)), (n_pos, 1))
+    s_neg = np.reshape(np.sqrt(np.abs(1 - d_neg_scale)), (n_neg, 1))
     s = np.row_stack((s_neg, s_pos))
     return s
 
@@ -377,16 +375,14 @@ def SVDD_kernel(X, y, Gram, C):
         return []
     D_2_pos = np.reshape([get_distance_2(i, G_pos, alpha_pos) for i in range(n_pos)], (n_pos, 1))
     D_2_neg = np.reshape([get_distance_2(i, G_neg, alpha_neg) for i in range(n_neg)], (n_neg, 1))
-    D_pos = np.sqrt(D_2_pos)
-    D_neg = np.sqrt(D_2_neg)
+    d_pos = np.sqrt(D_2_pos)
+    d_neg = np.sqrt(D_2_neg)
 
-    d_pos_max = np.max(D_pos)
-    d_pos_min = np.min(D_pos)
-    d_neg_max = np.max(D_neg)
-    d_neg_min = np.min(D_neg)
+    d_pos_scale = preprocessing.MinMaxScaler().fit_transform(d_pos)
+    d_neg_scale = preprocessing.MinMaxScaler().fit_transform(d_neg.reshape)
 
-    s_pos = np.reshape([np.sqrt((1 - (D_pos[i] - d_pos_min)/(d_pos_max - d_pos_min))) for i in range(n_pos)], (n_pos, 1))
-    s_neg = np.reshape([np.sqrt((1 - (D_neg[i] - d_neg_min)/(d_neg_max - d_neg_min))) for i in range(n_neg)], (n_neg, 1))
+    s_pos = np.reshape(np.sqrt(1 - d_pos_scale), (n_pos, 1))
+    s_neg = np.reshape(np.sqrt(1 - d_neg_scale), (n_neg, 1))
     s = np.row_stack((s_neg, s_pos))
     return s
 
@@ -404,8 +400,8 @@ def OCSVM_membership(X, y, g):
     d_neg = clf_neg.score_samples(X_neg)
     d_neg_scale = preprocessing.MinMaxScaler().fit_transform(d_neg.reshape(-1, 1))
 
-    s_pos = np.sqrt(1 - d_pos_scale)
-    s_neg = np.sqrt(1 - d_neg_scale)
+    s_pos = np.sqrt(np.abs(1 - d_pos_scale))
+    s_neg = np.sqrt(np.abs(1 - d_neg_scale))
 
     s = np.row_stack((s_neg, s_pos))
     return s

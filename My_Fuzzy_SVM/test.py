@@ -1,8 +1,8 @@
 import numpy as np
-import membership, My_Fuzzy_SVM
-from sklearn import metrics, preprocessing
+import membership, Fuzzy_SVM
+from sklearn import metrics
 from imblearn.metrics import specificity_score
-from sklearn.model_selection import GridSearchCV, cross_validate, train_test_split
+from sklearn.model_selection import GridSearchCV, cross_validate, train_test_split, StratifiedKFold
 
 
 def split(X, y): 
@@ -45,9 +45,23 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, rando
 
 X_train, y_train = split(X_train, y_train)
 
-g = 0.5
-nu = 0.1
-s = membership.SVDD_membership(X_train, y_train, g = g, C = nu)
+C = 2
+gamma = 1
+
+clf = Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, membership = 'OCSVM')
+cv = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
+five_fold = cross_validate(clf, X_train, y_train, cv = cv, scoring = 'accuracy')
+mean_ACC = np.mean(five_fold['test_score'])
+
+print('five fold:')
+print(mean_ACC)
+
+clf.fit(X_train, y_train)
+y_pred = clf.predict(X_test)
+ACC = metrics.accuracy_score(y_test, y_pred)
+
+print('Testing set:')
+print(ACC)
 
 
-print(s)
+

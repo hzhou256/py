@@ -1,11 +1,16 @@
+import sys
+path = 'D:/Program Files/libsvm-weights-3.24/python'
+sys.path.append(path)
 import numpy as np
-from matplotlib import pyplot as plt
+from svmutil import *
 
 
-# 生成训练数据
-X = 0.3 * np.random.randn(1000, 2)
-X_train = np.r_[X+2, X-2]
+y, x = svm_read_problem('D:/Program Files/libsvm-weights-3.24/heart_scale')
+W = [1] * len(y)
+W[0] = 20
+W[1] = 10
+W[2] = 5.5
 
-plt.scatter(X[:,0], X[:,1])
-plt.show()
-
+prob = svm_problem(W, y, x)
+param = svm_parameter('-s 3 -c 5 -h 0')
+CV_ACC = svm_train(W, y, x, '-t 2 -c 5 -g 0.1 -v 5')
