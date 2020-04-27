@@ -116,9 +116,8 @@ class FSVM_Classifier(BaseEstimator, ClassifierMixin):
     def predict(self, X):
         return np.sign(self.project(X))
 
-
-    #def predict_proba(self, X):
-
+    def predict_proba(self, X):
+        return 1 / (1 + np.exp(-self.project(X)))
 
     def decision_function(self, X):
         return self.project(X)
