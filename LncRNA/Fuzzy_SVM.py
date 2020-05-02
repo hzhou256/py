@@ -37,7 +37,7 @@ class FSVM_Classifier(BaseEstimator, ClassifierMixin):
     """
     Fuzzy SVM Classifier
     """
-    def __init__(self, C = 1, gamma = 0.5, nu = 0.5, alpha= 1, membership = 'None', kernel = 'rbf', thres = 0.5):
+    def __init__(self, C = 1, gamma = 0.5, nu = 0.5, membership = 'None', kernel = 'rbf', thres = 0.5):
         self.C = C
         self.gamma = gamma
         self.membership = membership
@@ -45,7 +45,6 @@ class FSVM_Classifier(BaseEstimator, ClassifierMixin):
         self.kernel = kernel
         self.nu = nu
         self.thres = thres
-        self.alpha = alpha
 
     def cal_membership(self, X, y):
         n_samples = np.shape(X)[0]
@@ -55,8 +54,6 @@ class FSVM_Classifier(BaseEstimator, ClassifierMixin):
             W = np.ones((n_samples, 1))
         elif self.membership == 'OCSVM':
             W = membership.OCSVM_membership(X, y, self.gamma)
-        elif self.membership == 'IFN_SVDD':
-            W = membership.IFN_membership(X, y, self.gamma, self.C, self.alpha)
         return W
 
     def fit(self, X, y, Weight = []):

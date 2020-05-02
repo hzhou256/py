@@ -47,24 +47,9 @@ X_train, y_train = split(X_train, y_train)
 
 C = 2
 gamma = 1
+alpha = 1
 
-clf = Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, membership = 'OCSVM')
-cv = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
-five_fold = cross_validate(clf, X_train, y_train, cv = cv, scoring = 'accuracy')
-mean_ACC = np.mean(five_fold['test_score'])
-
-print('five fold:')
-print(mean_ACC)
-
-clf.fit(X_train, y_train)
-y_pred = clf.predict(X_test)
-y_proba = clf.predict_proba(X_test)
-ACC = metrics.accuracy_score(y_test, y_pred)
-AUC = metrics.roc_auc_score(y_test, clf.decision_function(X_test))
-
-print('Testing set:')
-print(ACC)
-print(AUC)
-
+s = membership.IFN_membership(X_train, y_train, gamma, C, alpha)
+print(s)
 
 

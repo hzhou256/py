@@ -34,64 +34,48 @@ def split(X, y):
     X = np.row_stack((X_neg, X_pos))
     return X, y
 
-dataset = ['australian', 'heart', 'sonar']
-name = dataset[1]
-
-f1 = np.loadtxt('E:/Study/Bioinformatics/UCI/' + name + '/data.csv', delimiter = ',')
-X = f1[:, 0:-1]
-y = f1[:, -1]
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 0)
-
-X_train, y_train = split(X_train, y_train)
-
-cv = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
-parameters = {'C': np.logspace(-10, 10, base = 2, num = 42), 'gamma': np.logspace(5, -15, base = 2, num = 42)}
+dataset = ['australian', 'breastw', 'diabetes', 'german', 'heart', 'ionosphere', 'sonar']
+for i in range(len(dataset)):
+    name = dataset[i]
+    print(name)
+    f1 = np.loadtxt('E:/Study/Bioinformatics/UCI/' + name + '/data.csv', delimiter = ',')
+    X = f1[:, 0:-1]
+    y = f1[:, -1]
 
 
-grid = GridSearchCV(Fuzzy_SVM.FSVM_Classifier(membership = 'None'), parameters, n_jobs = -1, cv = cv, verbose = 1)
-grid.fit(X_train, y_train)
-gamma = grid.best_params_['gamma']
-C = grid.best_params_['C']
+    X_train, y_train = split(X, y)
 
-clf = Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, membership = 'None')
-clf.fit(X_train, y_train)
+    cv = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
+    parameters = {'C': np.logspace(-10, 10, base = 2, num = 42), 'gamma': np.logspace(5, -15, base = 2, num = 42)}
 
-scorerMCC = metrics.make_scorer(metrics.matthews_corrcoef)
-scorerSP = metrics.make_scorer(specificity_score)
-scorerPR = metrics.make_scorer(metrics.precision_score)
-scorerSE = metrics.make_scorer(metrics.recall_score)
-scorer = {'ACC':'accuracy', 'recall':scorerSE, 'roc_auc': 'roc_auc', 'MCC':scorerMCC, 'SP':scorerSP}
+    nu = 0.1
+    grid = GridSearchCV(Fuzzy_SVM.FSVM_Classifier(membership = 'SVDD', nu = nu), parameters, n_jobs = -1, cv = cv, verbose = 0)
+    grid.fit(X_train, y_train)
+    gamma = grid.best_params_['gamma']
+    C = grid.best_params_['C']
 
-five_fold = cross_validate(clf, X_train, y_train, cv = cv, scoring = scorer)
+    clf = Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, membership = 'SVDD', nu = nu)
+    clf.fit(X_train, y_train)
 
-mean_ACC = np.mean(five_fold['test_ACC'])
-mean_sensitivity = np.mean(five_fold['test_recall'])
-mean_AUC = np.mean(five_fold['test_roc_auc'])
-mean_MCC = np.mean(five_fold['test_MCC'])
-mean_SP = np.mean(five_fold['test_SP'])
+    scorerMCC = metrics.make_scorer(metrics.matthews_corrcoef)
+    scorerSP = metrics.make_scorer(specificity_score)
+    scorerPR = metrics.make_scorer(metrics.precision_score)
+    scorerSE = metrics.make_scorer(metrics.recall_score)
+    scorer = {'ACC':'accuracy', 'recall':scorerSE, 'roc_auc': 'roc_auc', 'MCC':scorerMCC, 'SP':scorerSP}
 
-print('five fold:')
-print(mean_sensitivity)
-print(mean_SP)
-print(mean_ACC)
-print(mean_MCC)
-print(mean_AUC)
+    five_fold = cross_validate(clf, X_train, y_train, cv = cv, scoring = scorer)
 
-y_pred = clf.predict(X_test)
-ACC = metrics.accuracy_score(y_test, y_pred)
-precision = metrics.precision_score(y_test, y_pred)
-sensitivity = metrics.recall_score(y_test, y_pred)
-specificity = specificity_score(y_test, y_pred)
-AUC = metrics.roc_auc_score(y_test, clf.decision_function(X_test))
-MCC = metrics.matthews_corrcoef(y_test, y_pred)
+    mean_ACC = np.mean(five_fold['test_ACC'])
+    mean_sensitivity = np.mean(five_fold['test_recall'])
+    mean_AUC = np.mean(five_fold['test_roc_auc'])
+    mean_MCC = np.mean(five_fold['test_MCC'])
+    mean_SP = np.mean(five_fold['test_SP'])
 
-print('Testing set:')
-print(sensitivity)
-print(specificity)
-print(ACC)
-print(MCC)
-print(AUC)
+    print(mean_sensitivity)
+    print(mean_SP)
+    print(mean_ACC)
+    print(mean_MCC)
+    print(mean_AUC)
 
-print('C = ', C)
-print('g = ', gamma)
+    print('C = ', C)
+    print('g = ', gamma)

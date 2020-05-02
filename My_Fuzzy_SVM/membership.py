@@ -334,6 +334,20 @@ def get_distance_2(index, Gram, alpha):
     d_square = temp_1 - 2 * temp_2 + temp_3
     return d_square
 
+def project(d):
+    d = np.ravel(d)
+    d_min = np.min(d)
+    d_max = np.max(d)
+    d_avg = (d_max + d_min) / 2
+    s = np.zeros(len(d))
+    for i in range(len(d)):
+        if d[i] > d_avg:
+            s[i] = (1 - (d[i] - d_min)/(d_max - d_min))**2 + 0.01
+        else:
+            s[i] = 1 - (d[i] - d_min)/(d_max - d_min)
+    return s
+
+
 def SVDD_membership(X, y, g, C):
     X_pos, X_neg = split(X, y)
     G_pos = G(X_pos, X_pos, g)
@@ -355,6 +369,12 @@ def SVDD_membership(X, y, g, C):
 
     s_pos = np.reshape(np.sqrt(np.abs(1 - d_pos_scale)), (n_pos, 1))
     s_neg = np.reshape(np.sqrt(np.abs(1 - d_neg_scale)), (n_neg, 1))
+    '''
+    d_pos_scale = project(d_pos)
+    d_neg_scale = project(d_neg)
+    s_pos = np.reshape(d_pos_scale, (n_pos, 1))
+    s_neg = np.reshape(d_neg_scale, (n_neg, 1))
+    '''
     s = np.row_stack((s_neg, s_pos))
     return s
 
@@ -406,3 +426,43 @@ def OCSVM_membership(X, y, g):
     s = np.row_stack((s_neg, s_pos))
     return s
     
+# IFN
+def distance_2(index_1, index_2, Gram):
+    d_2 = Gram[index_1][index_1] + Gram[index_2][index_2] - 2*Gram[index_1][index_2]
+    return d_2
+
+def get_rho(index_i, y_i, Gram, alpha, n_pos, n_neg):
+    n_samples = n_pos + n_neg
+    if y_i == -1:
+        numerator = np.sum([distance_2(index_i, j, Gram) <= alpha**2 for j in range(n_neg, n_samples)] != 0)
+    else:
+        numerator = np.sum([distance_2(index_i, j, Gram) <= alpha**2 for j in range(n_neg)] != 0)
+    denominator = np.sum([distance_2(index_i, j, Gram) <= alpha**2 for j in range(n_samples)] != 0)
+    return numerator / denominator
+
+def IFN_membership(X, y, g, C, alpha):
+    X_pos, X_neg = split(X, y)
+    Gram = G(X, X, g)
+    n_pos = np.shape(X_pos)[0]
+    n_neg = np.shape(X_neg)[0]
+    n_samples = n_pos + n_neg
+
+    mu = np.ravel(SVDD_membership(X, y, g, C))
+    rho = np.ravel([get_rho(i, y[i], Gram, alpha, n_pos, n_neg) for i in range(n_samples)])
+    nu = np.zeros(n_samples)
+    i = 0
+    for (mu_i, rho_i) in zip(mu, rho):
+        nu[i] = (1 - mu_i) * rho_i
+        i = i + 1
+    
+    s = np.zeros(n_samples)
+    i = 0
+    for (mu_i, nu_i) in zip(mu, nu):
+        if nu_i == 0:
+            s[i] = mu_i
+        elif mu_i <= nu_i:
+            s[i] = 0
+        else:
+            s[i] = (1 - nu_i) / (2 - mu_i - nu_i)
+        i = i + 1
+    return s
