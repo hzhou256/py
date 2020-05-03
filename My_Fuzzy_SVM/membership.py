@@ -441,6 +441,9 @@ def get_rho(index_i, y_i, Gram, alpha, n_pos, n_neg):
     return numerator / denominator
 
 def IFN_membership(X, y, g, C, alpha):
+    '''
+    alpha (0.1, 2)
+    '''
     X_pos, X_neg = split(X, y)
     Gram = G(X, X, g)
     n_pos = np.shape(X_pos)[0]
