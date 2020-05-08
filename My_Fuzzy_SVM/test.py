@@ -2,10 +2,10 @@ import numpy as np
 import membership, Fuzzy_SVM
 from sklearn import metrics
 from imblearn.metrics import specificity_score
-from sklearn.model_selection import GridSearchCV, cross_validate, train_test_split, StratifiedKFold
+from sklearn.model_selection import cross_validate, StratifiedKFold
 
 
-def split(X, y): 
+def Resplit(X, y): 
     '''
     y = {-1, 1}
     '''
@@ -34,22 +34,46 @@ def split(X, y):
     X = np.row_stack((X_neg, X_pos))
     return X, y
 
-dataset = ['australian', 'heart', 'sonar']
-name = dataset[2]
+C_list = [0.1110, 0.84446, 3.2655, 1024.0, 730.2239,  6.4216, 12.6278]
+g_list = [0.006824, 0.0048664, 3.05176e-05, 0.000118, 3.05176e-05, 0.2814, 0.553379]
+alpha_list = np.linspace(0, 2, num = 100)
 
-f1 = np.loadtxt('E:/Study/Bioinformatics/UCI/' + name + '/data.csv', delimiter = ',')
-X = f1[:, 0:-1]
-y = f1[:, -1]
+dataset = ['australian', 'breastw', 'diabetes', 'german', 'heart', 'ionosphere', 'sonar']
+for i in range(6, 7):
+    name = dataset[i]
+    print(name)
+    f1 = np.loadtxt('E:/Study/Bioinformatics/UCI/' + name + '/data.csv', delimiter = ',')
+    X = f1[:, 0:-1]
+    y = f1[:, -1]
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 0)
+    X_train, y_train = Resplit(X, y)
 
-X_train, y_train = split(X_train, y_train)
+    cv = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
 
-C = 2
-gamma = 1
-alpha = 1
+    C = C_list[i]
+    gamma = g_list[i]
 
-s = membership.IFN_membership(X_train, y_train, gamma, C, alpha)
-print(s)
+    for a in alpha_list:
+        alpha = a
+        clf = Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, membership = 'IFN_SVDD', alpha = alpha)
+        clf.fit(X_train, y_train)
 
+        scorerMCC = metrics.make_scorer(metrics.matthews_corrcoef)
+        scorerSP = metrics.make_scorer(specificity_score)
+        scorerPR = metrics.make_scorer(metrics.precision_score)
+        scorerSE = metrics.make_scorer(metrics.recall_score)
+        scorer = {'ACC':'accuracy', 'recall':scorerSE, 'roc_auc': 'roc_auc', 'MCC':scorerMCC, 'SP':scorerSP}
 
+        five_fold = cross_validate(clf, X_train, y_train, cv = cv, scoring = scorer, verbose = 0, n_jobs = 4)
+
+        mean_ACC = np.mean(five_fold['test_ACC'])
+        mean_sensitivity = np.mean(five_fold['test_recall'])
+        mean_AUC = np.mean(five_fold['test_roc_auc'])
+        mean_MCC = np.mean(five_fold['test_MCC'])
+        mean_SP = np.mean(five_fold['test_SP'])
+
+        #print(mean_sensitivity)
+        #print(mean_SP)
+        print(mean_ACC)
+        #print(mean_MCC)
+        #print(mean_AUC)

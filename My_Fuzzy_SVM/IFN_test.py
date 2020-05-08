@@ -46,8 +46,8 @@ for i in range(3, 7):
     X_train, y_train = split(X, y)
 
     cv = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
-    #parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21), 'alpha': np.linspace(0.1, 2, num = 10)}
-    parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21), 'alpha': [0.1]}
+    parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21), 'alpha': np.linspace(0.1, 2, num = 10)}
+    #parameters = {'C': np.logspace(-10, 10, base = 2, num = 42), 'gamma': np.logspace(5, -15, base = 2, num = 42), 'alpha': [0.1]}
 
     grid = GridSearchCV(Fuzzy_SVM.FSVM_Classifier(membership = 'IFN_SVDD'), parameters, n_jobs = 4, cv = cv, verbose = 1)
     grid.fit(X_train, y_train)

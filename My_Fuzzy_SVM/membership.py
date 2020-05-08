@@ -433,12 +433,22 @@ def distance_2(index_1, index_2, Gram):
 
 def get_rho(index_i, y_i, Gram, alpha, n_pos, n_neg):
     n_samples = n_pos + n_neg
+    numerator = 0
+    denominator = 0
+    a_2 = alpha**2
     if y_i == -1:
-        numerator = np.sum([distance_2(index_i, j, Gram) <= alpha**2 for j in range(n_neg, n_samples)] != 0)
+        D_2_up = [distance_2(index_i, j, Gram) for j in range(n_neg, n_samples)]
     else:
-        numerator = np.sum([distance_2(index_i, j, Gram) <= alpha**2 for j in range(n_neg)] != 0)
-    denominator = np.sum([distance_2(index_i, j, Gram) <= alpha**2 for j in range(n_samples)] != 0)
-    return numerator / denominator
+        D_2_up = [distance_2(index_i, j, Gram) for j in range(n_neg)]
+    for dist_2 in D_2_up:
+        if dist_2 <= a_2:
+            numerator = numerator + 1
+    D_2_low = [distance_2(index_i, j, Gram) for j in range(n_samples)]
+    for dist_2 in D_2_low:
+        if dist_2 <= a_2:
+            denominator = denominator + 1
+    rho = numerator / denominator
+    return rho
 
 def IFN_membership(X, y, g, C, alpha):
     '''
