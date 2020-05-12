@@ -35,7 +35,7 @@ def split(X, y):
     return X, y
 
 dataset = ['australian', 'breastw', 'diabetes', 'german', 'heart', 'ionosphere', 'sonar']
-for i in range(3, 7):
+for i in range(3, 4):
     name = dataset[i]
     print(name)
     f1 = np.loadtxt('E:/Study/Bioinformatics/UCI/' + name + '/data.csv', delimiter = ',')

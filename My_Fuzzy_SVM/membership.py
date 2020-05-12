@@ -334,21 +334,23 @@ def get_distance_2(index, Gram, alpha):
     d_square = temp_1 - 2 * temp_2 + temp_3
     return d_square
 
-def project(d):
-    d = np.ravel(d)
-    d_min = np.min(d)
-    d_max = np.max(d)
-    d_avg = (d_max + d_min) / 2
-    s = np.zeros(len(d))
-    for i in range(len(d)):
-        if d[i] > d_avg:
-            s[i] = (1 - (d[i] - d_min)/(d_max - d_min))**2 + 0.01
-        else:
-            s[i] = 1 - (d[i] - d_min)/(d_max - d_min)
+def linear_project(d):
+    d_scale = preprocessing.MinMaxScaler().fit_transform(d)
+    s = np.reshape(np.sqrt(np.abs(1 - d_scale)), (-1, 1))
     return s
 
+def sigmoid_project(d):
+    d = np.ravel(d)
+    s = 1 - 1 / (1 + np.exp(-d))
+    return s
 
-def SVDD_membership(X, y, g, C):
+def project(d, proj):
+    if proj == 'linear':
+        return linear_project(d)
+    elif proj == 'sigmoid':
+        return sigmoid_project(d)
+
+def SVDD_membership(X, y, g, C, proj):
     X_pos, X_neg = split(X, y)
     G_pos = G(X_pos, X_pos, g)
     G_neg = G(X_neg, X_neg, g)
@@ -364,17 +366,11 @@ def SVDD_membership(X, y, g, C):
     d_pos = np.sqrt(D_2_pos)
     d_neg = np.sqrt(D_2_neg)
 
-    d_pos_scale = preprocessing.MinMaxScaler().fit_transform(d_pos)
-    d_neg_scale = preprocessing.MinMaxScaler().fit_transform(d_neg)
-
-    s_pos = np.reshape(np.sqrt(np.abs(1 - d_pos_scale)), (n_pos, 1))
-    s_neg = np.reshape(np.sqrt(np.abs(1 - d_neg_scale)), (n_neg, 1))
-    '''
-    d_pos_scale = project(d_pos)
-    d_neg_scale = project(d_neg)
+    d_pos_scale = project(d_pos, proj)
+    d_neg_scale = project(d_neg, proj)
     s_pos = np.reshape(d_pos_scale, (n_pos, 1))
     s_neg = np.reshape(d_neg_scale, (n_neg, 1))
-    '''
+
     s = np.row_stack((s_neg, s_pos))
     return s
 
@@ -460,7 +456,7 @@ def IFN_membership(X, y, g, C, alpha):
     n_neg = np.shape(X_neg)[0]
     n_samples = n_pos + n_neg
 
-    mu = np.ravel(SVDD_membership(X, y, g, C))
+    mu = np.ravel(SVDD_membership(X, y, g, C, proj = 'linear'))
     rho = np.ravel([get_rho(i, y[i], Gram, alpha, n_pos, n_neg) for i in range(n_samples)])
     nu = np.zeros(n_samples)
     i = 0

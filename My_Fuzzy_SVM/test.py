@@ -34,8 +34,8 @@ def Resplit(X, y):
     X = np.row_stack((X_neg, X_pos))
     return X, y
 
-C_list = [0.1110, 0.84446, 3.2655, 1024.0, 730.2239,  6.4216, 12.6278]
-g_list = [0.006824, 0.0048664, 3.05176e-05, 0.000118, 3.05176e-05, 0.2814, 0.553379]
+C_list = [0.015625, 4.0, 8.0, 2.0, 512.0, 8.0, 128.0]
+g_list = [0.03125, 0.001953125, 3.05176e-05, 0.0078125, 3.05176e-05, 0.0625, 1.0]
 alpha_list = np.linspace(0, 2, num = 100)
 
 dataset = ['australian', 'breastw', 'diabetes', 'german', 'heart', 'ionosphere', 'sonar']
