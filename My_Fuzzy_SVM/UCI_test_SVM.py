@@ -35,7 +35,7 @@ def split(X, y):
     return X, y
 
 dataset = ['australian', 'breastw', 'diabetes', 'german', 'heart', 'ionosphere', 'sonar']
-for i in range(len(dataset)):
+for i in range(0, 3):
     name = dataset[i]
     print(name)
     f1 = np.loadtxt('E:/Study/Bioinformatics/UCI/' + name + '/data.csv', delimiter = ',')
@@ -48,13 +48,13 @@ for i in range(len(dataset)):
     cv = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
     parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21), 'nu': np.linspace(0.1, 1, num = 10)}
 
-    grid = GridSearchCV(Fuzzy_SVM.FSVM_Classifier(membership = 'SVDD', proj = 'sigmoid'), parameters, n_jobs = -1, cv = cv, verbose = 1)
+    grid = GridSearchCV(Fuzzy_SVM.FSVM_Classifier(membership = 'SVDD', proj = 'normal'), parameters, n_jobs = -1, cv = cv, verbose = 1)
     grid.fit(X_train, y_train)
     gamma = grid.best_params_['gamma']
     C = grid.best_params_['C']
     nu = grid.best_params_['nu']
 
-    clf = Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, membership = 'SVDD', nu = nu, proj = 'sigmoid')
+    clf = Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, membership = 'SVDD', nu = nu, proj = 'normal')
     clf.fit(X_train, y_train)
 
     scorerMCC = metrics.make_scorer(metrics.matthews_corrcoef)
@@ -79,3 +79,4 @@ for i in range(len(dataset)):
 
     print('C = ', C)
     print('g = ', gamma)
+    print('nu = ', nu)

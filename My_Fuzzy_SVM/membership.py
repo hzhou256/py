@@ -1,6 +1,7 @@
 import numpy as np
 import collections
 from scipy.spatial.distance import cdist
+import scipy.stats
 import numba
 from cvxopt import matrix, solvers
 from sklearn import svm, preprocessing
@@ -344,11 +345,22 @@ def sigmoid_project(d):
     s = 1 - 1 / (1 + np.exp(-d))
     return s
 
+def normal_project(d):
+    d = np.ravel(d)
+    mu = np.mean(d)
+    std = np.std(d, ddof = 0)
+    s = np.zeros(len(d))
+    for i in range(len(d)):
+        s[i] = scipy.stats.norm(loc = mu, scale = std).cdf(d[i])
+    return s
+
 def project(d, proj):
     if proj == 'linear':
         return linear_project(d)
     elif proj == 'sigmoid':
         return sigmoid_project(d)
+    elif proj == 'normal':
+        return normal_project(d)
 
 def SVDD_membership(X, y, g, C, proj):
     X_pos, X_neg = split(X, y)

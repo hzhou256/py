@@ -34,10 +34,9 @@ def Resplit(X, y):
     X = np.row_stack((X_neg, X_pos))
     return X, y
 
-C_list = [0.015625, 4.0, 8.0, 2.0, 512.0, 8.0, 128.0]
-g_list = [0.03125, 0.001953125, 3.05176e-05, 0.0078125, 3.05176e-05, 0.0625, 1.0]
-alpha_list = np.linspace(0, 2, num = 100)
-
+C_list = [0.125, 4.0, 8.0, 2.0, 1024.0, 16.0, 32.0]
+g_list = [0.0078125, 0.001953125, 6.103515625e-05, 0.0625, 3.05176e-05, 0.0625, 1.0]
+nu = 0.1
 dataset = ['australian', 'breastw', 'diabetes', 'german', 'heart', 'ionosphere', 'sonar']
 for i in range(6, 7):
     name = dataset[i]
@@ -53,27 +52,6 @@ for i in range(6, 7):
     C = C_list[i]
     gamma = g_list[i]
 
-    for a in alpha_list:
-        alpha = a
-        clf = Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, membership = 'IFN_SVDD', alpha = alpha)
-        clf.fit(X_train, y_train)
+    clf = Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, membership = 'SVDD', nu = nu, proj = 'normal')
+    clf.fit(X_train, y_train)
 
-        scorerMCC = metrics.make_scorer(metrics.matthews_corrcoef)
-        scorerSP = metrics.make_scorer(specificity_score)
-        scorerPR = metrics.make_scorer(metrics.precision_score)
-        scorerSE = metrics.make_scorer(metrics.recall_score)
-        scorer = {'ACC':'accuracy', 'recall':scorerSE, 'roc_auc': 'roc_auc', 'MCC':scorerMCC, 'SP':scorerSP}
-
-        five_fold = cross_validate(clf, X_train, y_train, cv = cv, scoring = scorer, verbose = 0, n_jobs = 4)
-
-        mean_ACC = np.mean(five_fold['test_ACC'])
-        mean_sensitivity = np.mean(five_fold['test_recall'])
-        mean_AUC = np.mean(five_fold['test_roc_auc'])
-        mean_MCC = np.mean(five_fold['test_MCC'])
-        mean_SP = np.mean(five_fold['test_SP'])
-
-        #print(mean_sensitivity)
-        #print(mean_SP)
-        print(mean_ACC)
-        #print(mean_MCC)
-        #print(mean_AUC)
