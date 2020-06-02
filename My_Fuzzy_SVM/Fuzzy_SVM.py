@@ -1,18 +1,20 @@
-import numba
 import numpy as np
 import membership
 from cvxopt import matrix, solvers
 from scipy.spatial.distance import cdist
+from sklearn import metrics
 from sklearn.base import BaseEstimator, ClassifierMixin
 
 
-@numba.jit(nopython = True) 
 def gaussian(vec1, vec2, g):
-    k = np.exp(-g*np.square((np.linalg.norm(vec1 - vec2))))
+    X = np.reshape(vec1, (1, -1))
+    Y = np.reshape(vec2, (1, -1))
+    k = metrics.pairwise.rbf_kernel(X, Y, gamma = g)
+    k = np.double(k)
     return k
 
 def Gauss_kernel(X, Y, g):
-    K = cdist(X, Y, gaussian, g = g)
+    K = metrics.pairwise.rbf_kernel(X, Y, gamma = g)
     return K
 
 def QP_solver(y, W, Gram, C):
@@ -78,7 +80,7 @@ class FSVM_Classifier(BaseEstimator, ClassifierMixin):
         a = np.ravel(QP_solver(y, W, self.Gram, self.C))
 
         # Support vectors have non zero lagrange multipliers
-        sv = a > 1e-10
+        sv = a > 0
         self.sv_index = np.arange(len(a))[sv]
         self.a = a[sv]
         self.sv = X[sv]
@@ -109,10 +111,10 @@ class FSVM_Classifier(BaseEstimator, ClassifierMixin):
             for i in range(len(X)):
                 s = 0
                 for j in range(len(self.a)):
-                    if self.kernel == 'rbf':
-                        s += self.a[j] * self.sv_y[j] * gaussian(X[i], self.sv[j], self.gamma)
-                    elif self.kernel == 'precomputed':
+                    if self.kernel == 'precomputed':
                         s += self.a[j] * self.sv_y[j] * X[i][self.sv_index[j]]
+                    else:
+                        s += self.a[j] * self.sv_y[j] * self.Gram[i][self.sv_index[j]]
                 y_predict[i] = s
             return y_predict + self.b
 

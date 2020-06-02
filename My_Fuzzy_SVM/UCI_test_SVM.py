@@ -2,7 +2,8 @@ import numpy as np
 import membership, Fuzzy_SVM
 from sklearn import metrics
 from imblearn.metrics import specificity_score
-from sklearn.model_selection import GridSearchCV, cross_validate, train_test_split, StratifiedKFold
+from sklearn.model_selection import GridSearchCV, cross_validate, StratifiedKFold
+from sklearn import svm
 
 
 def split(X, y): 
@@ -35,7 +36,7 @@ def split(X, y):
     return X, y
 
 dataset = ['australian', 'breastw', 'diabetes', 'german', 'heart', 'ionosphere', 'sonar']
-for i in range(0, 3):
+for i in range(0, 1):
     name = dataset[i]
     print(name)
     f1 = np.loadtxt('E:/Study/Bioinformatics/UCI/' + name + '/data.csv', delimiter = ',')
@@ -46,15 +47,17 @@ for i in range(0, 3):
     X_train, y_train = split(X, y)
 
     cv = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
-    parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21), 'nu': np.linspace(0.1, 1, num = 10)}
-
-    grid = GridSearchCV(Fuzzy_SVM.FSVM_Classifier(membership = 'SVDD', proj = 'normal'), parameters, n_jobs = -1, cv = cv, verbose = 1)
+    parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21), 'nu': np.linspace(0.1, 0.5, num = 5)}
+    #parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21)}
+    grid = GridSearchCV(Fuzzy_SVM.FSVM_Classifier(membership = 'SVDD'), parameters, n_jobs = -1, cv = cv, verbose = 1)
+    #grid = GridSearchCV(svm.SVC(kernel = 'rbf'), parameters, n_jobs = -1, cv = cv, verbose = 1)
     grid.fit(X_train, y_train)
     gamma = grid.best_params_['gamma']
     C = grid.best_params_['C']
     nu = grid.best_params_['nu']
 
-    clf = Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, membership = 'SVDD', nu = nu, proj = 'normal')
+    clf = Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, membership = 'SVDD', nu = nu, proj = 'beta')
+    #clf = svm.SVC(C = C, gamma = gamma, kernel = 'rbf', probability = True)
     clf.fit(X_train, y_train)
 
     scorerMCC = metrics.make_scorer(metrics.matthews_corrcoef)

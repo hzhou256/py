@@ -4,19 +4,23 @@ from scipy.spatial.distance import cdist
 import scipy.stats
 import numba
 from cvxopt import matrix, solvers
-from sklearn import svm, preprocessing
+from sklearn import svm, preprocessing, metrics
+import warnings
+warnings.filterwarnings("ignore")
 
 
 
 delta = 0.001
 
-@numba.jit(nopython = True, fastmath = True) 
 def gaussian(vec1, vec2, g):
-    k = np.exp(-g*np.square((np.linalg.norm(vec1 - vec2))))
+    X = np.reshape(vec1, (1, -1))
+    Y = np.reshape(vec2, (1, -1))
+    k = metrics.pairwise.rbf_kernel(X, Y, gamma = g)
+    k = np.double(k)
     return k
 
 def G(X, Y, g):
-    K = cdist(X, Y, gaussian, g = g)
+    K = metrics.pairwise.rbf_kernel(X, Y, gamma = g)
     return K
 
 '''
@@ -347,12 +351,19 @@ def sigmoid_project(d):
 
 def normal_project(d):
     d = np.ravel(d)
-    mu = np.mean(d)
-    std = np.std(d, ddof = 0)
+    loc, scale = scipy.stats.norm.fit(d)
     s = np.zeros(len(d))
     for i in range(len(d)):
-        s[i] = scipy.stats.norm(loc = mu, scale = std).cdf(d[i])
+        s[i] = scipy.stats.norm.cdf(d[i], loc = loc, scale = scale)
     return s
+
+def beta_project(d):
+    d = np.ravel(d)
+    a, b, loc, scale = scipy.stats.beta.fit(d)
+    s = np.zeros(len(d))
+    for i in range(len(d)):
+        s[i] = scipy.stats.beta.cdf(d[i], a = a, b = b, loc = loc, scale = scale)
+    return s 
 
 def project(d, proj):
     if proj == 'linear':
@@ -361,6 +372,8 @@ def project(d, proj):
         return sigmoid_project(d)
     elif proj == 'normal':
         return normal_project(d)
+    elif proj == 'beta':
+        return beta_project(d)
 
 def SVDD_membership(X, y, g, C, proj):
     X_pos, X_neg = split(X, y)
