@@ -1,18 +1,20 @@
-import numba
 import numpy as np
 import membership
 from cvxopt import matrix, solvers
 from scipy.spatial.distance import cdist
+from sklearn import metrics
 from sklearn.base import BaseEstimator, ClassifierMixin
 
 
-@numba.jit(nopython = True) 
 def gaussian(vec1, vec2, g):
-    k = np.exp(-g*np.square((np.linalg.norm(vec1 - vec2))))
+    X = np.reshape(vec1, (1, -1))
+    Y = np.reshape(vec2, (1, -1))
+    k = metrics.pairwise.rbf_kernel(X, Y, gamma = g)
+    k = np.double(k)
     return k
 
 def Gauss_kernel(X, Y, g):
-    K = cdist(X, Y, gaussian, g = g)
+    K = metrics.pairwise.rbf_kernel(X, Y, gamma = g)
     return K
 
 def QP_solver(y, W, Gram, C):
@@ -37,7 +39,7 @@ class FSVM_Classifier(BaseEstimator, ClassifierMixin):
     """
     Fuzzy SVM Classifier
     """
-    def __init__(self, C = 1, gamma = 0.5, nu = 0.5, membership = 'None', kernel = 'rbf', thres = 0.5):
+    def __init__(self, C = 1, gamma = 0.5, nu = 0.5, alpha= 1, membership = 'None', kernel = 'rbf', thres = 0.5, proj = 'linear'):
         self.C = C
         self.gamma = gamma
         self.membership = membership
@@ -45,20 +47,24 @@ class FSVM_Classifier(BaseEstimator, ClassifierMixin):
         self.kernel = kernel
         self.nu = nu
         self.thres = thres
+        self.alpha = alpha
+        self.proj = proj
 
     def cal_membership(self, X, y):
         n_samples = np.shape(X)[0]
         if self.membership == 'SVDD':
-            W = membership.SVDD_membership(X, y, g = self.gamma, C = self.nu)
+            W = membership.SVDD_membership(X, y, g = self.gamma, C = self.nu, proj = self.proj)
         elif self.membership == 'None':
             W = np.ones((n_samples, 1))
         elif self.membership == 'OCSVM':
             W = membership.OCSVM_membership(X, y, self.gamma)
+        elif self.membership == 'IFN_SVDD':
+            W = membership.IFN_membership(X, y, self.gamma, self.C, self.alpha)
         return W
 
     def fit(self, X, y, Weight = []):
         n_features = np.shape(X)[1]
-
+        self.X = X
         if self.membership == 'precomputed':
             W = Weight
         else:
@@ -74,7 +80,7 @@ class FSVM_Classifier(BaseEstimator, ClassifierMixin):
         a = np.ravel(QP_solver(y, W, self.Gram, self.C))
 
         # Support vectors have non zero lagrange multipliers
-        sv = a > 1e-10
+        sv = a > 0
         self.sv_index = np.arange(len(a))[sv]
         self.a = a[sv]
         self.sv = X[sv]
@@ -101,6 +107,22 @@ class FSVM_Classifier(BaseEstimator, ClassifierMixin):
         if self.w is not None:
             return np.dot(X, self.w) + self.b
         else:
+            if self.kernel == 'precomputed':
+                Gram = X
+            elif self.kernel == 'rbf':
+                Gram = Gauss_kernel(X, self.X, g = self.gamma)
+            y_predict = np.zeros(len(X))
+            for i in range(len(X)):
+                s = 0
+                for j in range(len(self.a)):
+                    s += self.a[j] * self.sv_y[j] * Gram[i][self.sv_index[j]]
+                y_predict[i] = s
+            return y_predict + self.b
+    '''        
+    def project(self, X):
+        if self.w is not None:
+            return np.dot(X, self.w) + self.b
+        else:
             y_predict = np.zeros(len(X))
             for i in range(len(X)):
                 s = 0
@@ -111,8 +133,7 @@ class FSVM_Classifier(BaseEstimator, ClassifierMixin):
                         s += self.a[j] * self.sv_y[j] * X[i][self.sv_index[j]]
                 y_predict[i] = s
             return y_predict + self.b
-
-
+    '''
     def predict(self, X):
         return np.sign(self.project(X))
 

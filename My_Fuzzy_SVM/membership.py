@@ -74,13 +74,13 @@ def split(X, y):
 
 
 # 1. Use Class Center to Reduce the Effects of Outliers
-def class_center_membership(X, y, delta): 
+def class_center_membership(X, y): 
     '''
-    X: data, y: label, delta: parameter
+    X: data, y: label
     '''
     cnt = collections.Counter(y)
     n_pos = cnt[1] 
-    n_neg = cnt[0]
+    n_neg = cnt[-1]
     X_pos, X_neg = split(X, y)
     mean_pos = np.mean(X_pos, axis = 0)
     mean_neg = np.mean(X_neg, axis = 0)
@@ -96,13 +96,13 @@ def class_center_membership(X, y, delta):
     for i in range(len(y)):
         if y[i] == 1:
             s[i] = 1 - np.linalg.norm(mean_pos - X[i])/(r_pos + delta)
-        elif y[i] == 0:
+        elif y[i] == -1:
             s[i] = 1 - np.linalg.norm(mean_neg - X[i])/(r_neg + delta)
     return s
 
 # 2. Fuzzy membership function for nonlinear SVM
 
-def get_radius_square(index, X, Gram, Sum, K, **kwargs): 
+def get_radius_square(index, X, Gram, Sum): 
     '''
     Calculate distance between two points in feature space
     '''
@@ -112,25 +112,25 @@ def get_radius_square(index, X, Gram, Sum, K, **kwargs):
     r_square = k_temp - 2/n * temp_1 + 1/(n*n) * Sum
     return r_square
 
-def FSVM_2_membership(X, y, delta, K, **kwargs): 
+def FSVM_2_membership(X, y, gamma): 
     '''
-    X: data, y: label, delta: parameter, K: kernel function
+    X: data, y: label, gamma: parameter
     '''
     X_pos, X_neg = split(X, y)
-    G_pos = G(X_pos, X_pos, **kwargs)
-    G_neg = G(X_neg, X_neg, **kwargs)
+    G_pos = G(X_pos, X_pos, gamma)
+    G_neg = G(X_neg, X_neg, gamma)
     sum_pos = np.asmatrix(G_pos).sum()
     sum_neg = np.asmatrix(G_neg).sum()
-    r_square_pos = np.max([(get_radius_square(i, X_pos, G_pos, sum_pos, K, **kwargs)) for i in range(np.shape(X_pos)[0])])
-    r_square_neg = np.max([(get_radius_square(i, X_neg, G_neg, sum_neg, K, **kwargs)) for i in range(np.shape(X_neg)[0])])
+    r_square_pos = np.max([(get_radius_square(i, X_pos, G_pos, sum_pos)) for i in range(np.shape(X_pos)[0])])
+    r_square_neg = np.max([(get_radius_square(i, X_neg, G_neg, sum_neg)) for i in range(np.shape(X_neg)[0])])
     n_pos = np.shape(X_pos)[0]
     n_neg = np.shape(X_neg)[0]
     s_pos = np.zeros(n_pos)
     s_neg = np.zeros(n_neg)
     for i in range(n_pos):
-        s_pos[i] = 1 - np.sqrt(get_radius_square(i, X_pos, G_pos, sum_pos, K, **kwargs)/(r_square_pos + delta))
+        s_pos[i] = 1 - np.sqrt(get_radius_square(i, X_pos, G_pos, sum_pos)/(r_square_pos + delta))
     for j in range(n_neg):
-        s_neg[j] = 1 - np.sqrt(get_radius_square(j, X_neg, G_neg, sum_neg, K, **kwargs)/(r_square_neg + delta))
+        s_neg[j] = 1 - np.sqrt(get_radius_square(j, X_neg, G_neg, sum_neg)/(r_square_neg + delta))
     s = np.hstack((s_neg, s_pos))
     return s
 

@@ -60,11 +60,15 @@ class FSVM_Classifier(BaseEstimator, ClassifierMixin):
             W = membership.OCSVM_membership(X, y, self.gamma)
         elif self.membership == 'IFN_SVDD':
             W = membership.IFN_membership(X, y, self.gamma, self.C, self.alpha)
+        elif self.membership == 'center':
+            W = membership.class_center_membership(X, y)
+        elif self.membership == 'FSVM_2':
+            W = membership.FSVM_2_membership(X, y, self.gamma)
         return W
 
     def fit(self, X, y, Weight = []):
         n_features = np.shape(X)[1]
-
+        self.X = X
         if self.membership == 'precomputed':
             W = Weight
         else:
@@ -107,18 +111,33 @@ class FSVM_Classifier(BaseEstimator, ClassifierMixin):
         if self.w is not None:
             return np.dot(X, self.w) + self.b
         else:
+            if self.kernel == 'precomputed':
+                Gram = X
+            elif self.kernel == 'rbf':
+                Gram = Gauss_kernel(X, self.X, g = self.gamma)
             y_predict = np.zeros(len(X))
             for i in range(len(X)):
                 s = 0
                 for j in range(len(self.a)):
-                    if self.kernel == 'precomputed':
-                        s += self.a[j] * self.sv_y[j] * X[i][self.sv_index[j]]
-                    else:
-                        s += self.a[j] * self.sv_y[j] * self.Gram[i][self.sv_index[j]]
+                    s += self.a[j] * self.sv_y[j] * Gram[i][self.sv_index[j]]
                 y_predict[i] = s
             return y_predict + self.b
-
-
+    '''        
+    def project(self, X):
+        if self.w is not None:
+            return np.dot(X, self.w) + self.b
+        else:
+            y_predict = np.zeros(len(X))
+            for i in range(len(X)):
+                s = 0
+                for j in range(len(self.a)):
+                    if self.kernel == 'rbf':
+                        s += self.a[j] * self.sv_y[j] * gaussian(X[i], self.sv[j], self.gamma)
+                    elif self.kernel == 'precomputed':
+                        s += self.a[j] * self.sv_y[j] * X[i][self.sv_index[j]]
+                y_predict[i] = s
+            return y_predict + self.b
+    '''
     def predict(self, X):
         return np.sign(self.project(X))
 

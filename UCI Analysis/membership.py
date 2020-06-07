@@ -1,21 +1,26 @@
 import numpy as np
 import collections
 from scipy.spatial.distance import cdist
+import scipy.stats
 import numba
 from cvxopt import matrix, solvers
-from sklearn import svm, preprocessing
+from sklearn import svm, preprocessing, metrics
+import warnings
+warnings.filterwarnings("ignore")
 
 
 
 delta = 0.001
 
-@numba.jit(nopython = True, fastmath = True) 
 def gaussian(vec1, vec2, g):
-    k = np.exp(-g*np.square((np.linalg.norm(vec1 - vec2))))
+    X = np.reshape(vec1, (1, -1))
+    Y = np.reshape(vec2, (1, -1))
+    k = metrics.pairwise.rbf_kernel(X, Y, gamma = g)
+    k = np.double(k)
     return k
 
 def G(X, Y, g):
-    K = cdist(X, Y, gaussian, g = g)
+    K = metrics.pairwise.rbf_kernel(X, Y, gamma = g)
     return K
 
 '''
@@ -334,7 +339,43 @@ def get_distance_2(index, Gram, alpha):
     d_square = temp_1 - 2 * temp_2 + temp_3
     return d_square
 
-def SVDD_membership(X, y, g, C):
+def linear_project(d):
+    d_scale = preprocessing.MinMaxScaler().fit_transform(d)
+    s = np.reshape(np.sqrt(np.abs(1 - d_scale)), (-1, 1))
+    return s
+
+def sigmoid_project(d):
+    d = np.ravel(d)
+    s = 1 - 1 / (1 + np.exp(-d))
+    return s
+
+def normal_project(d):
+    d = np.ravel(d)
+    loc, scale = scipy.stats.norm.fit(d)
+    s = np.zeros(len(d))
+    for i in range(len(d)):
+        s[i] = scipy.stats.norm.cdf(d[i], loc = loc, scale = scale)
+    return s
+
+def beta_project(d):
+    d = np.ravel(d)
+    a, b, loc, scale = scipy.stats.beta.fit(d)
+    s = np.zeros(len(d))
+    for i in range(len(d)):
+        s[i] = scipy.stats.beta.cdf(d[i], a = a, b = b, loc = loc, scale = scale)
+    return s 
+
+def project(d, proj):
+    if proj == 'linear':
+        return linear_project(d)
+    elif proj == 'sigmoid':
+        return sigmoid_project(d)
+    elif proj == 'normal':
+        return normal_project(d)
+    elif proj == 'beta':
+        return beta_project(d)
+
+def SVDD_membership(X, y, g, C, proj):
     X_pos, X_neg = split(X, y)
     G_pos = G(X_pos, X_pos, g)
     G_neg = G(X_neg, X_neg, g)
@@ -344,19 +385,17 @@ def SVDD_membership(X, y, g, C):
         alpha_pos = np.reshape(QP_solver(G_pos, C), (n_pos, 1))
         alpha_neg = np.reshape(QP_solver(G_neg, C), (n_neg, 1))
     except ValueError:
-        return []
+        return np.ones((n_neg + n_pos, 1))
     D_2_pos = np.reshape([get_distance_2(i, G_pos, alpha_pos) for i in range(n_pos)], (n_pos, 1))
     D_2_neg = np.reshape([get_distance_2(i, G_neg, alpha_neg) for i in range(n_neg)], (n_neg, 1))
-    D_pos = np.sqrt(D_2_pos)
-    D_neg = np.sqrt(D_2_neg)
+    d_pos = np.sqrt(D_2_pos)
+    d_neg = np.sqrt(D_2_neg)
 
-    d_pos_max = np.max(D_pos)
-    d_pos_min = np.min(D_pos)
-    d_neg_max = np.max(D_neg)
-    d_neg_min = np.min(D_neg)
+    d_pos_scale = project(d_pos, proj)
+    d_neg_scale = project(d_neg, proj)
+    s_pos = np.reshape(d_pos_scale, (n_pos, 1))
+    s_neg = np.reshape(d_neg_scale, (n_neg, 1))
 
-    s_pos = np.reshape([np.sqrt((1 - (D_pos[i] - d_pos_min)/(d_pos_max - d_pos_min))) for i in range(n_pos)], (n_pos, 1))
-    s_neg = np.reshape([np.sqrt((1 - (D_neg[i] - d_neg_min)/(d_neg_max - d_neg_min))) for i in range(n_neg)], (n_neg, 1))
     s = np.row_stack((s_neg, s_pos))
     return s
 
@@ -377,16 +416,14 @@ def SVDD_kernel(X, y, Gram, C):
         return []
     D_2_pos = np.reshape([get_distance_2(i, G_pos, alpha_pos) for i in range(n_pos)], (n_pos, 1))
     D_2_neg = np.reshape([get_distance_2(i, G_neg, alpha_neg) for i in range(n_neg)], (n_neg, 1))
-    D_pos = np.sqrt(D_2_pos)
-    D_neg = np.sqrt(D_2_neg)
+    d_pos = np.sqrt(D_2_pos)
+    d_neg = np.sqrt(D_2_neg)
 
-    d_pos_max = np.max(D_pos)
-    d_pos_min = np.min(D_pos)
-    d_neg_max = np.max(D_neg)
-    d_neg_min = np.min(D_neg)
+    d_pos_scale = preprocessing.MinMaxScaler().fit_transform(d_pos)
+    d_neg_scale = preprocessing.MinMaxScaler().fit_transform(d_neg.reshape)
 
-    s_pos = np.reshape([np.sqrt((1 - (D_pos[i] - d_pos_min)/(d_pos_max - d_pos_min))) for i in range(n_pos)], (n_pos, 1))
-    s_neg = np.reshape([np.sqrt((1 - (D_neg[i] - d_neg_min)/(d_neg_max - d_neg_min))) for i in range(n_neg)], (n_neg, 1))
+    s_pos = np.reshape(np.sqrt(1 - d_pos_scale), (n_pos, 1))
+    s_neg = np.reshape(np.sqrt(1 - d_neg_scale), (n_neg, 1))
     s = np.row_stack((s_neg, s_pos))
     return s
 
@@ -404,9 +441,62 @@ def OCSVM_membership(X, y, g):
     d_neg = clf_neg.score_samples(X_neg)
     d_neg_scale = preprocessing.MinMaxScaler().fit_transform(d_neg.reshape(-1, 1))
 
-    s_pos = np.sqrt(1 - d_pos_scale)
-    s_neg = np.sqrt(1 - d_neg_scale)
+    s_pos = np.sqrt(np.abs(1 - d_pos_scale))
+    s_neg = np.sqrt(np.abs(1 - d_neg_scale))
 
     s = np.row_stack((s_neg, s_pos))
     return s
     
+# IFN
+def distance_2(index_1, index_2, Gram):
+    d_2 = Gram[index_1][index_1] + Gram[index_2][index_2] - 2*Gram[index_1][index_2]
+    return d_2
+
+def get_rho(index_i, y_i, Gram, alpha, n_pos, n_neg):
+    n_samples = n_pos + n_neg
+    numerator = 0
+    denominator = 0
+    a_2 = alpha**2
+    if y_i == -1:
+        D_2_up = [distance_2(index_i, j, Gram) for j in range(n_neg, n_samples)]
+    else:
+        D_2_up = [distance_2(index_i, j, Gram) for j in range(n_neg)]
+    for dist_2 in D_2_up:
+        if dist_2 <= a_2:
+            numerator = numerator + 1
+    D_2_low = [distance_2(index_i, j, Gram) for j in range(n_samples)]
+    for dist_2 in D_2_low:
+        if dist_2 <= a_2:
+            denominator = denominator + 1
+    rho = numerator / denominator
+    return rho
+
+def IFN_membership(X, y, g, C, alpha):
+    '''
+    alpha (0.1, 2)
+    '''
+    X_pos, X_neg = split(X, y)
+    Gram = G(X, X, g)
+    n_pos = np.shape(X_pos)[0]
+    n_neg = np.shape(X_neg)[0]
+    n_samples = n_pos + n_neg
+
+    mu = np.ravel(SVDD_membership(X, y, g, C, proj = 'linear'))
+    rho = np.ravel([get_rho(i, y[i], Gram, alpha, n_pos, n_neg) for i in range(n_samples)])
+    nu = np.zeros(n_samples)
+    i = 0
+    for (mu_i, rho_i) in zip(mu, rho):
+        nu[i] = (1 - mu_i) * rho_i
+        i = i + 1
+    
+    s = np.zeros(n_samples)
+    i = 0
+    for (mu_i, nu_i) in zip(mu, nu):
+        if nu_i == 0:
+            s[i] = mu_i
+        elif mu_i <= nu_i:
+            s[i] = 0
+        else:
+            s[i] = (1 - nu_i) / (2 - mu_i - nu_i)
+        i = i + 1
+    return s

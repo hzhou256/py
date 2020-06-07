@@ -14,29 +14,26 @@ def get_feature(file):
     return data
 
 
-f1 = np.loadtxt('E:/Study/Bioinformatics/RNA/dataset/train.csv', delimiter = ',', skiprows = 1)
+f1 = np.loadtxt('E:/Study/Bioinformatics/RNA/dataset/data.csv', delimiter = ',', skiprows = 1)
 X_train = get_feature(f1)
 y_train = f1[:, 0]
 
-f2 = np.loadtxt('E:/Study/Bioinformatics/RNA/dataset/test.csv', delimiter = ',', skiprows = 1)
-X_test = get_feature(f2)
-y_test = f2[:, 0]
 
-
-nu = 0.1
 cv = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
+#parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21), 'nu': np.linspace(0.1, 0.5, num = 5)}
 parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21)}
 
 
-#grid = GridSearchCV(Fuzzy_SVM.FSVM_Classifier(membership = 'None'), parameters, n_jobs = -1, cv = cv, verbose = 1)
-grid = GridSearchCV(Fuzzy_SVM.FSVM_Classifier(membership = 'SVDD', nu = nu), parameters, n_jobs = -1, cv = cv, verbose = 1)
+grid = GridSearchCV(svm.SVC(kernel = 'rbf', probability = True), parameters, n_jobs = -1, cv = cv, verbose = 1)
+#grid = GridSearchCV(Fuzzy_SVM.FSVM_Classifier(membership = 'SVDD', nu = nu, proj = 'beta'), parameters, n_jobs = -1, cv = cv)
 grid.fit(X_train, y_train)
 gamma = grid.best_params_['gamma']
 C = grid.best_params_['C']
+nu = grid.best_params_['nu']
 
 
-#clf = Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, membership = 'None')
-clf = Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, membership = 'SVDD', nu = nu)
+clf = svm.SVC(C = C, gamma = gamma, kernel = 'rbf', probability = True)
+#clf = Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, membership = 'SVDD', nu = nu, proj = 'beta')
 clf.fit(X_train, y_train)
 
 scorerMCC = metrics.make_scorer(metrics.matthews_corrcoef)
@@ -59,21 +56,3 @@ print(mean_SP)
 print(mean_ACC)
 print(mean_MCC)
 print(mean_AUC)
-
-y_pred = clf.predict(X_test)
-ACC = metrics.accuracy_score(y_test, y_pred)
-precision = metrics.precision_score(y_test, y_pred)
-sensitivity = metrics.recall_score(y_test, y_pred)
-specificity = specificity_score(y_test, y_pred)
-AUC = metrics.roc_auc_score(y_test, clf.decision_function(X_test))
-MCC = metrics.matthews_corrcoef(y_test, y_pred)
-
-print('Testing set:')
-print(sensitivity)
-print(specificity)
-print(ACC)
-print(MCC)
-print(AUC)
-
-print('C = ', C)
-print('g = ', gamma)
