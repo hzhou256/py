@@ -12,15 +12,15 @@ dataset_name = ['Antifp_Main', 'Antifp_DS1', 'Antifp_DS2']
 for ds in range(3):
     name_ds = dataset_name[ds]
     print('dataset:', name_ds)
-    methods_name = ['188-bit', 'AAC', 'ASDC', 'CKSAAP', 'CTD', 'DPC']
-    for it in range(6):
+    methods_name = ['188-bit', 'AAC', 'ASDC', 'CKSAAP', 'DPC']
+    for it in range(2, 5):
         name = methods_name[it]
         print(name + ':')
 
-        f1 = np.loadtxt('D:/Study/Bioinformatics/AFP/kernel_matrix/' + name_ds + '/KM_train_tanimoto/KM_tanimoto_' + name + '_train.csv', delimiter = ',')
-        f2 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/train_label.csv', delimiter = ',')
-        f3 = np.loadtxt('D:/Study/Bioinformatics/AFP/kernel_matrix/' + name_ds + '/KM_test_tanimoto/KM_tanimoto_' + name + '_test.csv', delimiter = ',')
-        f4 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/test_label.csv', delimiter = ',')
+        f1 = np.loadtxt('E:/Study/Bioinformatics/AFP/kernel_matrix/' + name_ds + '/KM_train_tanimoto/KM_tanimoto_' + name + '_train.csv', delimiter = ',')
+        f2 = np.loadtxt('E:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/train_label.csv', delimiter = ',')
+        f3 = np.loadtxt('E:/Study/Bioinformatics/AFP/kernel_matrix/' + name_ds + '/KM_test_tanimoto/KM_tanimoto_' + name + '_test.csv', delimiter = ',')
+        f4 = np.loadtxt('E:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/test_label.csv', delimiter = ',')
 
         np.set_printoptions(suppress = True)
         gram = f1
@@ -46,7 +46,7 @@ for ds in range(3):
             return score
 
         # possible values of parameters
-        space= {'C': hp.loguniform('C', low = np.log(1e-7) , high = np.log(1e2))}
+        space= {'C': hp.loguniform('C', low = np.log(1e-7) , high = np.log(1e5))}
 
         # trials will contain logging information
         trials = Trials()

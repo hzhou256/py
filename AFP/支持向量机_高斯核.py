@@ -21,13 +21,13 @@ methods_name = ['ASDC', 'CKSAAP', 'DPC', 'CAT']
 for ds in range(3):
     name_ds = dataset_name[ds]
     print(name_ds)
-    for it in range(3,4):
+    for it in range(0, 1):
         name = methods_name[it]
         print(name)
-        f1 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/' + name +'/train_' + name +'.csv', delimiter = ',', skiprows = 1)
-        f2 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/train_label.csv', delimiter = ',')
-        f3 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/' + name +'/test_' + name +'.csv', delimiter = ',', skiprows = 1)
-        f4 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/test_label.csv', delimiter = ',')
+        f1 = np.loadtxt('E:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/' + name +'/train_' + name +'.csv', delimiter = ',', skiprows = 1)
+        f2 = np.loadtxt('E:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/train_label.csv', delimiter = ',')
+        f3 = np.loadtxt('E:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/' + name +'/test_' + name +'.csv', delimiter = ',', skiprows = 1)
+        f4 = np.loadtxt('E:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/test_label.csv', delimiter = ',')
 
         np.set_printoptions(suppress = True)
         X_train = get_feature(f1)
@@ -47,7 +47,7 @@ for ds in range(3):
             return score
 
         # possible values of parameters
-        space= {'C': hp.loguniform('C', low = np.log(1e-7) , high = np.log(1e2)), 
+        space= {'C': hp.loguniform('C', low = np.log(1e-7) , high = np.log(1e5)), 
                 'gamma': hp.loguniform('gamma', low = np.log(1e-7) , high = np.log(1e5))}
 
         # trials will contain logging information

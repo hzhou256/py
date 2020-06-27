@@ -399,6 +399,29 @@ def SVDD_membership(X, y, g, C, proj):
     s = np.row_stack((s_neg, s_pos))
     return s
 
+def SVDD_linear_kernel(X, y, C, proj):
+    X_pos, X_neg = split(X, y)
+    G_pos = metrics.pairwise.linear_kernel(X_pos, X_pos)
+    G_neg = metrics.pairwise.linear_kernel(X_neg, X_neg)
+    n_pos = np.shape(X_pos)[0]
+    n_neg = np.shape(X_neg)[0]
+    try:
+        alpha_pos = np.reshape(QP_solver(G_pos, C), (n_pos, 1))
+        alpha_neg = np.reshape(QP_solver(G_neg, C), (n_neg, 1))
+    except ValueError:
+        return np.ones((n_neg + n_pos, 1))
+    D_2_pos = np.reshape([get_distance_2(i, G_pos, alpha_pos) for i in range(n_pos)], (n_pos, 1))
+    D_2_neg = np.reshape([get_distance_2(i, G_neg, alpha_neg) for i in range(n_neg)], (n_neg, 1))
+    d_pos = np.sqrt(D_2_pos)
+    d_neg = np.sqrt(D_2_neg)
+
+    d_pos_scale = project(d_pos, proj)
+    d_neg_scale = project(d_neg, proj)
+    s_pos = np.reshape(d_pos_scale, (n_pos, 1))
+    s_neg = np.reshape(d_neg_scale, (n_neg, 1))
+
+    s = np.row_stack((s_neg, s_pos))
+    return s
 
 # SVDD_kernel_precomputed
 def SVDD_kernel(X, y, Gram, C):

@@ -6,6 +6,11 @@ from sklearn.model_selection import GridSearchCV, cross_validate, StratifiedKFol
 from sklearn import svm
 
 
+def get_AUPR(y_true, y_score):
+    precision, recall, _ = metrics.precision_recall_curve(y_true, y_score, pos_label = 1)
+    AUPR = metrics.auc(recall, precision)
+    return AUPR
+
 def split(X, y): 
     '''
     y = {-1, 1}
@@ -35,46 +40,36 @@ def split(X, y):
     X = np.row_stack((X_neg, X_pos))
     return X, y
 
-def get_AUPR(y_true, y_score):
-    precision, recall, _ = metrics.precision_recall_curve(y_true, y_score, pos_label = 1)
-    AUPR = metrics.auc(recall, precision)
-    return AUPR
 
+methods_name = ['ASDC', 'CKSAAP', 'DPC']
+for it in range(2, 3):
+    name = methods_name[it]
+    print(name + ':')
+    f1 = np.loadtxt('E:/Study/Bioinformatics/DeepAVP/'+name+'/train_'+name+'.csv', delimiter = ',')
+    X_train = f1[:, 0:-1]
+    y_train = f1[:, -1]
+    X_train, y_train = split(X_train, y_train)
 
-dataset = ['data73', 'data72', 'data71']
-for i in range(0, 3):
-    name = dataset[i]
-    print(name)
-
-    f1 = np.loadtxt('E:/Study/Bioinformatics/UCI/imbalance/' + name + '.csv', delimiter = ',')
-    X = f1[:, 0:-1]
-    y = f1[:, -1]
-
-    X_train, y_train = split(X, y)
+    f2 = np.loadtxt('E:/Study/Bioinformatics/DeepAVP/'+name+'/test_'+name+'.csv', delimiter = ',')
+    X_test = f2[:, 0:-1]
+    y_test = f2[:, -1]
 
     cv = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
-    parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21), 'nu': np.linspace(0.1, 0.5, num = 5)}
-    #parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21)}
-    grid = GridSearchCV(Fuzzy_SVM.FSVM_Classifier(membership = 'SVDD', proj = 'normal'), parameters, n_jobs = -1, cv = cv, verbose = 1)
-    #grid = GridSearchCV(svm.SVC(kernel = 'rbf'), parameters, n_jobs = -1, cv = cv, verbose = 1)
-    #grid = GridSearchCV(Fuzzy_SVM.FSVM_Classifier(membership = 'FSVM_2'), parameters, n_jobs = -1, cv = cv, verbose = 1)
-    grid.fit(X_train, y_train)
-    gamma = grid.best_params_['gamma']
-    C = grid.best_params_['C']
-    nu = grid.best_params_['nu']
+    parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21)}
 
-    clf = Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, membership = 'SVDD', nu = nu, proj = 'normal')
-    #clf = svm.SVC(C = C, gamma = gamma, kernel = 'rbf', probability = True)
-    #clf = Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, membership = 'FSVM_2')
-    clf.fit(X_train, y_train)
+    grid = GridSearchCV(svm.SVC(kernel = 'rbf'), parameters, n_jobs = -1, cv = cv, verbose = 1)
+    grid.fit(X_train, y_train)
+    C = grid.best_params_['C']
+    gamma = grid.best_params_['gamma']
+
+    clf = svm.SVC(C = C, gamma = gamma, kernel = 'rbf', probability = True)
 
     scorerMCC = metrics.make_scorer(metrics.matthews_corrcoef)
     scorerSP = metrics.make_scorer(specificity_score)
     scorerPR = metrics.make_scorer(metrics.precision_score)
     scorerSE = metrics.make_scorer(metrics.recall_score)
     scoreAUPR = metrics.make_scorer(get_AUPR, needs_threshold = True)
-    scorer = {'ACC':'accuracy', 'recall':scorerSE, 'roc_auc':'roc_auc', 'MCC':scorerMCC, 'SP':scorerSP, 'AUPR':scoreAUPR, 'AP': 'average_precision'}
-
+    scorer = {'ACC':'accuracy', 'recall':scorerSE, 'roc_auc':'roc_auc', 'MCC':scorerMCC, 'SP':scorerSP, 'AUPR':scoreAUPR}
     five_fold = cross_validate(clf, X_train, y_train, cv = cv, scoring = scorer, n_jobs = -1)
 
     mean_ACC = np.mean(five_fold['test_ACC'])
@@ -83,16 +78,31 @@ for i in range(0, 3):
     mean_MCC = np.mean(five_fold['test_MCC'])
     mean_SP = np.mean(five_fold['test_SP'])
     mean_AUPR = np.mean(five_fold['test_AUPR'])
-    mean_AP = np.mean(five_fold['test_AP'])
 
+    print('five fold:')
     print(mean_sensitivity)
     print(mean_SP)
     print(mean_ACC)
     print(mean_MCC)
     print(mean_AUC)
     print(mean_AUPR)
-    #print(mean_AP)
 
     print('C = ', C)
     print('g = ', gamma)
-    print('nu = ', nu)
+
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_test)
+    ACC = metrics.accuracy_score(y_test, y_pred)
+    sensitivity = metrics.recall_score(y_test, y_pred)
+    specificity = specificity_score(y_test, y_pred)
+    AUC = metrics.roc_auc_score(y_test, clf.decision_function(X_test))
+    MCC = metrics.matthews_corrcoef(y_test, y_pred)
+    AUPR = get_AUPR(y_test, clf.decision_function(X_test))
+
+    print('Testing set:')
+    print(sensitivity)
+    print(specificity)
+    print(ACC)
+    print(MCC)
+    print(AUC)
+    print(AUPR)

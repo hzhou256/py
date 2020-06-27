@@ -4,7 +4,7 @@ import csv
 
 AA = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
 
-f1 = open('E:/Study/Bioinformatics/AMP/fasta/train.fasta')
+f1 = open('E:/Study/Bioinformatics/DeepAVP/train.fasta')
 line = f1.readlines()
 
 n_protein = int(len(line) / 2)
@@ -46,7 +46,7 @@ for line_list in line:
         x = x + 1
 print(ASDC)
 
-with open('E:/Study/Bioinformatics/AMP/features/ASDC/train_ASDC.csv', 'w', newline='') as csvfile:
+with open('E:/Study/Bioinformatics/DeepAVP/ASDC/train_ASDC.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
     for row in ASDC:
         writer.writerow(row)

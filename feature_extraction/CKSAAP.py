@@ -4,4 +4,5 @@ import csv
 import pandas as pd
 
 
-os.system('python D:/Study/Bioinformatics/成都培训/git/feature-extraction/codes/CKSAAP.py D:/Study/Bioinformatics/AFP/datasets/Antifp_Hard/test.fasta 2 D:/Study/Bioinformatics/AFP/feature_matrix/Antifp_Hard/CKSAAP/test_CKSAAP.csv')
+os.system('python E:/Study/成都培训/git/feature-extraction/codes/CKSAAP.py E:/Study/Bioinformatics/DeepAVP/train.fasta 3 E:/Study/Bioinformatics/DeepAVP/CKSAAP/train_CKSAAP.csv')
+os.system('python E:/Study/成都培训/git/feature-extraction/codes/CKSAAP.py E:/Study/Bioinformatics/DeepAVP/test.fasta 3 E:/Study/Bioinformatics/DeepAVP/CKSAAP/test_CKSAAP.csv')

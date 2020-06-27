@@ -3,6 +3,7 @@ import membership, Fuzzy_SVM
 from sklearn import metrics
 from imblearn.metrics import specificity_score
 from sklearn.model_selection import GridSearchCV, cross_validate, StratifiedKFold
+from sklearn.ensemble import RandomForestClassifier
 
 
 def split(X, y): 
@@ -34,50 +35,65 @@ def split(X, y):
     X = np.row_stack((X_neg, X_pos))
     return X, y
 
-dataset = ['australian', 'breastw', 'diabetes', 'german', 'heart', 'ionosphere', 'sonar']
-for i in range(3, 4):
+def get_AUPR(y_true, y_score):
+    precision, recall, _ = metrics.precision_recall_curve(y_true, y_score, pos_label = 1)
+    AUPR = metrics.auc(recall, precision)
+    return AUPR
+
+dataset = ['australian', 'breastw', 'diabetes', 'german', 'heart', 'ionosphere', 'sonar', 'mushroom', 'bupa', 'transfusion', 'spam']
+for i in range(7, 8):
     name = dataset[i]
     print(name)
     f1 = np.loadtxt('E:/Study/Bioinformatics/UCI/' + name + '/data.csv', delimiter = ',')
     X = f1[:, 0:-1]
     y = f1[:, -1]
 
-
     X_train, y_train = split(X, y)
 
     cv = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
-    parameters = {'C': np.logspace(-10, 10, base = 2, num = 21), 'gamma': np.logspace(5, -15, base = 2, num = 21), 'alpha': np.linspace(0.1, 2, num = 10)}
-    #parameters = {'C': np.logspace(-10, 10, base = 2, num = 42), 'gamma': np.logspace(5, -15, base = 2, num = 42), 'alpha': [0.1]}
 
-    grid = GridSearchCV(Fuzzy_SVM.FSVM_Classifier(membership = 'IFN_SVDD'), parameters, n_jobs = 4, cv = cv, verbose = 1)
-    grid.fit(X_train, y_train)
-    gamma = grid.best_params_['gamma']
-    C = grid.best_params_['C']
-    alpha = grid.best_params_['alpha']
+    parameters_1 = {'n_estimators': np.arange(1, 200)}
+    parameters_2 = {'max_depth': np.arange(1, 100), 'criterion': ['gini', 'entropy']}
 
-    clf = Fuzzy_SVM.FSVM_Classifier(C = C, gamma = gamma, membership = 'IFN_SVDD', alpha = alpha)
+    grid_1 = GridSearchCV(RandomForestClassifier(), parameters_1, n_jobs = -1, cv = cv, verbose = 1)
+    grid_1.fit(X_train, y_train)
+
+    n_estimators = grid_1.best_params_['n_estimators']
+
+    grid_2 = GridSearchCV(RandomForestClassifier(n_estimators = n_estimators), parameters_2, n_jobs = -1, cv = cv, verbose = 1)
+    grid_2.fit(X_train, y_train)
+
+    max_depth = grid_2.best_params_['max_depth']
+    criterion = grid_2.best_params_['criterion']
+
+    clf = RandomForestClassifier(n_estimators = n_estimators, max_depth = max_depth, criterion = criterion)
     clf.fit(X_train, y_train)
 
     scorerMCC = metrics.make_scorer(metrics.matthews_corrcoef)
     scorerSP = metrics.make_scorer(specificity_score)
     scorerPR = metrics.make_scorer(metrics.precision_score)
     scorerSE = metrics.make_scorer(metrics.recall_score)
-    scorer = {'ACC':'accuracy', 'recall':scorerSE, 'roc_auc': 'roc_auc', 'MCC':scorerMCC, 'SP':scorerSP}
+    scoreAUPR = metrics.make_scorer(get_AUPR, needs_threshold = True)
+    scorer = {'ACC':'accuracy', 'recall':scorerSE, 'roc_auc':'roc_auc', 'MCC':scorerMCC, 'SP':scorerSP, 'AUPR':scoreAUPR}#, 'AP': 'average_precision'}
 
-    five_fold = cross_validate(clf, X_train, y_train, cv = cv, scoring = scorer)
-
+    five_fold = cross_validate(clf, X_train, y_train, cv = cv, scoring = scorer, n_jobs = -1)
+ 
     mean_ACC = np.mean(five_fold['test_ACC'])
     mean_sensitivity = np.mean(five_fold['test_recall'])
     mean_AUC = np.mean(five_fold['test_roc_auc'])
     mean_MCC = np.mean(five_fold['test_MCC'])
     mean_SP = np.mean(five_fold['test_SP'])
+    mean_AUPR = np.mean(five_fold['test_AUPR'])
+    #mean_AP = np.mean(five_fold['test_AP'])
 
     print(mean_sensitivity)
     print(mean_SP)
     print(mean_ACC)
     print(mean_MCC)
     print(mean_AUC)
+    print(mean_AUPR)
+    #print(mean_AP)
 
-    print('C = ', C)
-    print('g = ', gamma)
-    print('alpha =', alpha)
+    print('n_estimators = ', n_estimators)
+    print('max_depth = ', max_depth)
+    print('criterion = ', criterion)

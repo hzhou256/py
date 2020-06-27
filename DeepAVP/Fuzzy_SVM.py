@@ -54,8 +54,6 @@ class FSVM_Classifier(BaseEstimator, ClassifierMixin):
         n_samples = np.shape(X)[0]
         if self.membership == 'SVDD':
             W = membership.SVDD_membership(X, y, g = self.gamma, C = self.nu, proj = self.proj)
-        elif self.membership == 'SVDD_linear':
-            W = membership.SVDD_linear_kernel(X, y, C = self.nu, proj = self.proj)
         elif self.membership == 'None':
             W = np.ones((n_samples, 1))
         elif self.membership == 'OCSVM':
@@ -79,7 +77,7 @@ class FSVM_Classifier(BaseEstimator, ClassifierMixin):
         if self.kernel == 'rbf':
             self.Gram = Gauss_kernel(X, X, self.gamma)
         elif self.kernel == 'linear':
-            self.Gram = metrics.pairwise.linear_kernel(X)
+            self.Gram = np.dot(X.T, X)
         elif self.kernel == 'precomputed':
             self.Gram = X
         
