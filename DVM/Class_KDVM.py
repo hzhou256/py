@@ -1,22 +1,26 @@
+import time
 import collections
 import numpy as np
 from scipy.spatial.distance import cdist
+from sklearn.metrics import pairwise
 from sklearn.neighbors import NearestNeighbors
 from sklearn.base import BaseEstimator, ClassifierMixin
+from progressbar import Percentage, Bar, Timer, ETA, ProgressBar
 
 
-class DVM(BaseEstimator, ClassifierMixin):
+class KDVM(BaseEstimator, ClassifierMixin):
     '''
-    linear DVM
+    Kernelized DVM
     '''
-    def __init__(self, beta = 0.1, lamda = 0.1, n_neighbors = 5, knn_metric = 'minkowski', Laplacian_metric = 'cosine', p = 2):
+    def __init__(self, beta = 0.1, lamda = 0.1, n_neighbors = 5, knn_metric = 'minkowski', p = 2, Laplacian_metric = 'cosine', kernel = 'rbf', gamma = 0.5):
         self.beta = beta
         self.lamda = lamda
         self.n_neighbors = n_neighbors
         self.knn_metric = knn_metric
         self.Laplacian_metric = Laplacian_metric
         self.p = p
-
+        self.kernel = kernel
+        self.gamma = gamma
     
     def Ak_matrix(self, n_neighbors, query_index, X, X_test, y):
         '''
@@ -54,10 +58,14 @@ class DVM(BaseEstimator, ClassifierMixin):
 
     def get_alphak(self, query_index, X, X_test, Ak, L, beta, lamda):
         I = np.identity(np.shape(Ak)[1])
-        x = np.reshape(X_test[query_index], (-1, 1))
-        temp = np.dot(np.transpose(Ak), Ak) + beta*I + lamda*L
+        x = np.reshape(X_test[query_index], (1, -1))
+        Ak = np.transpose(Ak)
+        if self.kernel == 'rbf':
+            Gram_Ak = pairwise.rbf_kernel(Ak, gamma = self.gamma)
+            Gram_Ak_x = pairwise.rbf_kernel(Ak, x, gamma = self.gamma)
+        temp = Gram_Ak + beta*I + lamda*L
         inverse = np.linalg.inv(temp)
-        alphak = np.dot(inverse, np.transpose(Ak)).dot(x)
+        alphak = np.dot(inverse, Gram_Ak_x)
         return alphak
 
     def get_residue_for_one_class(self, query_index, X_test, Ak_i, alphak_i):
@@ -71,13 +79,19 @@ class DVM(BaseEstimator, ClassifierMixin):
         self.y = y
         return self
 
-    def predict(self, X, y, X_test):
+    def predict(self, X_test):
+        X = self.X
+        y = self.y
         cnt = dict(collections.Counter(y))
         n_class = len(cnt)
         n_samples = len(X_test)
         y_predict = np.zeros(n_samples)
+        
+        widgets = ['Progress: ', Percentage(), ' ', Bar('#'), ' ', Timer(), ' ', ETA()]
+        p = ProgressBar(widgets = widgets, maxval = n_samples)
+        p.start()
+        
         for query_index in range(n_samples):
-            print(query_index)
             Ak, index_per_class = self.Ak_matrix(n_neighbors = self.n_neighbors, query_index = query_index, X = X, X_test = X_test, y = y)
             L = self.Laplacian_matrix(Ak)
             alphak = self.get_alphak(query_index = query_index, X = X, X_test = X_test, Ak = Ak, L = L, beta = self.beta, lamda = self.lamda)
@@ -87,7 +101,11 @@ class DVM(BaseEstimator, ClassifierMixin):
                 alphak_i = alphak[int(index_per_class[class_label]-self.n_neighbors):int(index_per_class[class_label])]
                 residues[class_label] = self.get_residue_for_one_class(query_index = query_index, X_test = X_test, Ak_i = Ak_i, alphak_i = alphak_i)
             y_predict[query_index] = np.argmin(residues)
+            time.sleep(0.01)
+            p.update(query_index+1)
+        p.finish()
         return y_predict
+    
     '''
     def predict_proba(self, X):
 
