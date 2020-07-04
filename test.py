@@ -1,10 +1,11 @@
 import numpy as np
 import collections
 
-A1 = np.empty(3)
-A2 = np.zeros(3)
+A1 = np.empty((3,3))
+A2 = np.identity(5)
 A3 = np.zeros(3)
 A4 = np.zeros(3)
-Alist = np.zeros((4, 3))
-Alist[0] = A1
-print(Alist)
+Alist = []
+Alist.append(A2)
+Alist.append(A1)
+print(Alist[0][3])

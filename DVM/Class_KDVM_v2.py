@@ -12,13 +12,11 @@ class KDVM(BaseEstimator, ClassifierMixin):
     '''
     Kernelized DVM
     '''
-    def __init__(self, beta = 0.1, lamda = 0.1, n_neighbors = 5, knn_metric = 'minkowski', p = 2, Laplacian_metric = 'cosine', kernel = 'rbf', gamma = 0.5):
+    def __init__(self, beta = 0.1, lamda = 0.1, n_neighbors = 5, Laplacian_metric = 'cosine', kernel = 'rbf', gamma = 0.5):
         self.beta = beta
         self.lamda = lamda
         self.n_neighbors = n_neighbors
-        self.knn_metric = knn_metric
         self.Laplacian_metric = Laplacian_metric
-        self.p = p
         self.kernel = kernel
         self.gamma = gamma
 
@@ -44,6 +42,14 @@ class KDVM(BaseEstimator, ClassifierMixin):
         alphak = np.dot(inverse, Gram_Ak_x)
         return alphak    
 
+    def get_dist_matrix(self, Gram_x, Gram_y, Gram_xy):
+        m, n = np.shape(Gram_xy)
+        dist = np.zeros((m, n))
+        for i in range(m):
+            for j in range(n):
+                dist[i][j] = np.sqrt(Gram_x[i][i] + Gram_y[j][j] - 2*Gram_xy[i][j])
+        return dist
+
     def get_matrix_all(self, n_neighbors, X, X_test, y):
         '''
         return Ak_list, index_list, L_list, alphak_list for X_test
@@ -52,15 +58,30 @@ class KDVM(BaseEstimator, ClassifierMixin):
         n_tests = np.shape(X_test)[0]
         cnt = dict(collections.Counter(y))
         n_class = len(cnt)
-        neigh = NearestNeighbors(n_neighbors = n_neighbors, metric = self.knn_metric, p = self.p, n_jobs = -1)
+        neigh = NearestNeighbors(n_neighbors = n_neighbors, metric = 'precomputed', n_jobs = -1)
 
         Ak_list = np.zeros((n_tests, n_features, n_neighbors*n_class))
         index_list = np.zeros((n_tests, n_class))
         alphak_list = np.zeros((n_tests, n_neighbors*n_class, 1))
 
-        widgets = ['Progress: ', Percentage(), ' ', Bar('#'), ' ', Timer(), ' ', ETA()]
+        widgets = ['Fit_progress: ', Percentage(), ' ', Bar('#'), ' ', Timer(), ' ', ETA()]
         p = ProgressBar(widgets = widgets, maxval = n_tests)
         p.start()
+
+        knn_index_list = []
+        for class_label in range(n_class):
+            y_index = (y == class_label)
+            X_class = X[y_index]
+            if self.kernel == 'rbf':
+                Gram_X_class = pairwise.rbf_kernel(X_class)
+                Gram_X_test_X_class = pairwise.rbf_kernel(X_test, X_class)
+                Gram_X_test = pairwise.rbf_kernel(X_test)
+                dist_X_class = self.get_dist_matrix(Gram_X_class, Gram_X_class, Gram_X_class)
+                dist_X_test_X_class = self.get_dist_matrix(Gram_X_test, Gram_X_class, Gram_X_test_X_class)
+
+            neigh.fit(dist_X_class)
+            knn_index = neigh.kneighbors(dist_X_test_X_class, return_distance = False)
+            knn_index_list.append(knn_index)
 
         for query_index in range(n_tests):
             Ak = np.zeros((n_neighbors*n_class, n_features))
@@ -69,14 +90,13 @@ class KDVM(BaseEstimator, ClassifierMixin):
             for class_label in range(n_class):
                 y_index = (y == class_label)
                 X_class = X[y_index]
-                neigh.fit(X_class)
-                x = np.reshape(X_test[query_index], (1, -1))
-                knn_index = neigh.kneighbors(x, return_distance = False)
-                for index in knn_index[0]:
+                knn_index = knn_index_list[class_label][query_index]
+                for index in knn_index:
                     Ak[i] = X_class[index]
                     i += 1
                 index_per_class[j] = i
                 j += 1
+            
             Ak_list[query_index] = np.transpose(Ak)
             index_list[query_index] = index_per_class
             L = self.Laplacian_matrix(Ak_list[query_index])
