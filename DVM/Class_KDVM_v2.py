@@ -108,8 +108,13 @@ class KDVM(BaseEstimator, ClassifierMixin):
         return Ak_list, index_list, alphak_list
 
     def get_residue(self, query_index, X_test, Ak_i, alphak_i):
-        x = np.reshape(X_test[query_index], (-1, 1))
-        temp = x - np.dot(Ak_i, alphak_i)
+        x = np.reshape(X_test[query_index], (1, -1))
+        Ak_i = np.transpose(Ak_i)
+        if self.kernel == 'rbf':
+            Gram_x = pairwise.rbf_kernel(x)
+            Gram_Aki = pairwise.rbf_kernel(Ak_i)
+            Gram_x_Aki = pairwise.rbf_kernel(x, Ak_i)
+        temp = Gram_x - 2*np.dot(Gram_x_Aki, alphak_i) + np.dot(np.transpose(alphak_i), Gram_Aki).dot(alphak_i)
         residue = np.linalg.norm(temp)
         return residue
 
