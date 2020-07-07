@@ -46,14 +46,6 @@ class KDVM(BaseEstimator, ClassifierMixin):
         alphak = np.dot(inverse, Gram_Ak_x)
         return alphak    
 
-    def get_dist_matrix(self, Gram_x, Gram_y, Gram_xy):
-        m, n = np.shape(Gram_xy)
-        dist = np.zeros((m, n))
-        for i in range(m):
-            for j in range(n):
-                dist[i][j] = np.sqrt(Gram_x[i][i] + Gram_y[j][j] - 2*Gram_xy[i][j])
-        return dist
-
     def get_matrix_all(self, n_neighbors, X, X_test, y):
         '''
         return Ak_list, index_list, L_list, alphak_list for X_test
@@ -62,7 +54,7 @@ class KDVM(BaseEstimator, ClassifierMixin):
         n_tests = np.shape(X_test)[0]
         cnt = dict(collections.Counter(y))
         n_class = len(cnt)
-        neigh = NearestNeighbors(n_neighbors = n_neighbors, metric = 'precomputed', n_jobs = -1)
+        neigh = NearestNeighbors(n_neighbors = n_neighbors, n_jobs = -1)
 
         Ak_list = np.zeros((n_tests, n_features, n_neighbors*n_class))
         index_list = np.zeros((n_tests, n_class))
@@ -76,15 +68,8 @@ class KDVM(BaseEstimator, ClassifierMixin):
         for class_label in range(n_class):
             y_index = (y == class_label)
             X_class = X[y_index]
-            if self.kernel == 'rbf': # kernel KNN
-                Gram_X_class = pairwise.rbf_kernel(X_class)
-                Gram_X_test_X_class = pairwise.rbf_kernel(X_test, X_class)
-                Gram_X_test = pairwise.rbf_kernel(X_test)
-                dist_X_class = self.get_dist_matrix(Gram_X_class, Gram_X_class, Gram_X_class)
-                dist_X_test_X_class = self.get_dist_matrix(Gram_X_test, Gram_X_class, Gram_X_test_X_class)
-
-            neigh.fit(dist_X_class)
-            knn_index = neigh.kneighbors(dist_X_test_X_class, return_distance = False)
+            neigh.fit(X_class) # normal KNN
+            knn_index = neigh.kneighbors(X_test, return_distance = False)
             knn_index_list.append(knn_index)
 
         for query_index in range(n_tests):
