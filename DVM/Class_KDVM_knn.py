@@ -1,4 +1,3 @@
-import time
 import collections
 import numpy as np
 from scipy.spatial.distance import cdist
@@ -6,7 +5,6 @@ from sklearn.metrics import pairwise
 from sklearn.neighbors import NearestNeighbors
 from scipy.linalg import fractional_matrix_power
 from sklearn.base import BaseEstimator, ClassifierMixin
-from progressbar import Percentage, Bar, Timer, ETA, ProgressBar
 
 
 class KDVM(BaseEstimator, ClassifierMixin):
@@ -33,7 +31,6 @@ class KDVM(BaseEstimator, ClassifierMixin):
         L = np.dot(temp, L_temp).dot(temp)
         return L
 
-
     def get_alphak(self, query_index, X_test, Ak, L, beta, lamda):
         I = np.identity(np.shape(Ak)[1])
         x = np.reshape(X_test[query_index], (1, -1))
@@ -46,13 +43,6 @@ class KDVM(BaseEstimator, ClassifierMixin):
         alphak = np.dot(inverse, Gram_Ak_x)
         return alphak    
 
-    def get_dist_matrix(self, Gram_x, Gram_y, Gram_xy):
-        m, n = np.shape(Gram_xy)
-        dist = np.zeros((m, n))
-        for i in range(m):
-            for j in range(n):
-                dist[i][j] = np.sqrt(Gram_x[i][i] + Gram_y[j][j] - 2*Gram_xy[i][j])
-        return dist
 
     def get_matrix_all(self, n_neighbors, X, X_test, y):
         '''
@@ -62,30 +52,19 @@ class KDVM(BaseEstimator, ClassifierMixin):
         n_tests = np.shape(X_test)[0]
         cnt = dict(collections.Counter(y))
         n_class = len(cnt)
-        neigh = NearestNeighbors(n_neighbors = n_neighbors, metric = 'precomputed', n_jobs = -1)
+        neigh = NearestNeighbors(n_neighbors = n_neighbors, algorithm = 'kd_tree', n_jobs = -1)
 
         Ak_list = np.zeros((n_tests, n_features, n_neighbors*n_class))
         index_list = np.zeros((n_tests, n_class))
         alphak_list = np.zeros((n_tests, n_neighbors*n_class, 1))
 
-        widgets = ['Fit_progress: ', Percentage(), ' ', Bar('#'), ' ', Timer(), ' ', ETA()]
-        p = ProgressBar(widgets = widgets, maxval = n_tests)
-        p.start()
-
         knn_index_list = []
         for class_label in range(n_class):
             y_index = (y == class_label)
             X_class = X[y_index]
-            if self.kernel == 'rbf': # kernel KNN
-                Gram_X_class = pairwise.rbf_kernel(X_class)
-                Gram_X_test_X_class = pairwise.rbf_kernel(X_test, X_class)
-                Gram_X_test = pairwise.rbf_kernel(X_test)
-                dist_X_class = self.get_dist_matrix(Gram_X_class, Gram_X_class, Gram_X_class)
-                dist_X_test_X_class = self.get_dist_matrix(Gram_X_test, Gram_X_class, Gram_X_test_X_class)
-
-            neigh.fit(dist_X_class)
-            knn_index = neigh.kneighbors(dist_X_test_X_class, return_distance = False)
-            knn_index_list.append(knn_index)
+            neigh.fit(X_class) # normal KNN
+            knn_index = neigh.kneighbors(X_test, return_distance = False)
+            knn_index_list += [knn_index]
 
         for query_index in range(n_tests):
             Ak = np.zeros((n_neighbors*n_class, n_features))
@@ -95,9 +74,8 @@ class KDVM(BaseEstimator, ClassifierMixin):
                 y_index = (y == class_label)
                 X_class = X[y_index]
                 knn_index = knn_index_list[class_label][query_index]
-                for index in knn_index:
-                    Ak[i] = X_class[index]
-                    i += 1
+                Ak[i:i+n_neighbors] = X_class[knn_index[:]]
+                i += n_neighbors
                 index_per_class[j] = i
                 j += 1
             
@@ -105,10 +83,7 @@ class KDVM(BaseEstimator, ClassifierMixin):
             index_list[query_index] = index_per_class
             L = self.Laplacian_matrix(Ak_list[query_index])
             alphak_list[query_index] = self.get_alphak(query_index = query_index, X_test = X_test, Ak = Ak_list[query_index], L = L, beta = self.beta, lamda = self.lamda)
-            time.sleep(0.01)
-            p.update(query_index+1)
 
-        p.finish()
         return Ak_list, index_list, alphak_list
 
     def get_residue(self, query_index, X_test, Ak_i, alphak_i):
@@ -130,6 +105,7 @@ class KDVM(BaseEstimator, ClassifierMixin):
         return self
 
     def predict(self, X):
+        #gc.disable()
         X_test = X
         self.n_tests = len(X_test)
         self.Ak_list, self.index_list, self.alphak_list = self.get_matrix_all(n_neighbors = self.n_neighbors, X = self.X, y = self.y, X_test = X_test)
@@ -138,9 +114,9 @@ class KDVM(BaseEstimator, ClassifierMixin):
 
         y_predict = np.zeros(n_tests)
         
-        widgets = ['Predict_progress: ', Percentage(), ' ', Bar('#'), ' ', Timer(), ' ', ETA()]
-        p = ProgressBar(widgets = widgets, maxval = n_tests)
-        p.start()
+        #widgets = ['Predict_progress: ', Percentage(), ' ', Bar('#'), ' ', Timer(), ' ', ETA()]
+        #p = ProgressBar(widgets = widgets, maxval = n_tests)
+        #p.start()
 
         for query_index in range(n_tests):
             Ak, index_per_class = self.Ak_list[query_index], self.index_list[query_index]
@@ -152,9 +128,10 @@ class KDVM(BaseEstimator, ClassifierMixin):
                 residues[class_label] = self.get_residue(query_index = query_index, X_test = X_test, Ak_i = Ak_i, alphak_i = alphak_i)
             y_predict[query_index] = np.argmin(residues)
 
-            time.sleep(0.01)
-            p.update(query_index+1)
-        p.finish()
+            #time.sleep(0.01)
+            #p.update(query_index+1)
+        #p.finish()
+        #gc.enable()
         return y_predict
 
     def fit_predict(self, X, y, X_test):

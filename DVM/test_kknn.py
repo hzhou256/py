@@ -1,10 +1,10 @@
 import numpy as np
-import Class_KDVM_v2
+import Class_KDVM_kknn
 from sklearn import metrics
 from sklearn.model_selection import GridSearchCV, cross_validate, StratifiedKFold
 
 
-dataset = ['australian', 'breastw', 'diabetes', 'german', 'heart', 'ionosphere', 'sonar', 'mushroom', 'bupa', 'transfusion', 'spam']
+dataset = ['australian', 'breastw', 'diabetes', 'german', 'heart', 'ionosphere', 'sonar', 'mushroom', 'bupa', 'blood', 'spam']
 for i in range(0, 1):
     name = dataset[i]
     print(name)
@@ -26,12 +26,12 @@ for i in range(0, 1):
     cv = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
     parameters = {'gamma': np.logspace(5, -15, base = 2, num = 21), 'n_neighbors': np.linspace(5, max_val, num = num, dtype = int)}
 
-    grid = GridSearchCV(Class_KDVM_v2.KDVM(kernel = 'rbf'), parameters, n_jobs = -1, cv = cv, verbose = 1)
+    grid = GridSearchCV(Class_KDVM_kknn.KDVM(kernel = 'rbf'), parameters, n_jobs = -1, cv = cv, verbose = 1)
     grid.fit(X, y)
     gamma = grid.best_params_['gamma']
     n_neighbors = grid.best_params_['n_neighbors']
 
-    clf = Class_KDVM_v2.KDVM(kernel = 'rbf', gamma = gamma, n_neighbors = n_neighbors)
+    clf = Class_KDVM_kknn.KDVM(kernel = 'rbf', gamma = gamma, n_neighbors = n_neighbors)
     five_fold = cross_validate(clf, X, y, cv = cv, scoring = 'accuracy', n_jobs = -1)
     mean_ACC = np.mean(five_fold['test_score'])
     print(mean_ACC)
@@ -40,7 +40,7 @@ for i in range(0, 1):
     print(n_neighbors)
 
     '''
-    clf = Class_KDVM_v2.KDVM()
+    clf = Class_KDVM_kknn.KDVM()
     y_pred = clf.fit_predict(X, y, X)
     ACC = metrics.accuracy_score(y, y_pred)
     print(ACC)
@@ -49,7 +49,7 @@ for i in range(0, 1):
     gamma = 0.001953125
     n_neighbors = 200
     cv = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
-    clf = Class_KDVM_v2.KDVM(kernel = 'rbf', gamma = gamma, n_neighbors = n_neighbors)
+    clf = Class_KDVM_kknn.KDVM(kernel = 'rbf', gamma = gamma, n_neighbors = n_neighbors)
     five_fold = cross_validate(clf, X, y, cv = cv, scoring = 'accuracy', n_jobs = -1)
     mean_ACC = np.mean(five_fold['test_score'])
     print(mean_ACC)
