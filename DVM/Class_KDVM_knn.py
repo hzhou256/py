@@ -23,7 +23,10 @@ class KDVM(BaseEstimator, ClassifierMixin):
         Laplacian matrix: (n_negihbors * n_class, n_negihbors * n_class)
         '''
         Ak = np.transpose(Ak_matrix)
-        W = pairwise.rbf_kernel(Ak)
+
+        W = pairwise.rbf_kernel(Ak, gamma = self.gamma)
+        #W = pairwise.cosine_similarity(Ak)
+
         row_sum = np.sum(W, axis = 1)
         D = np.diag(row_sum)
         L_temp = D - W
@@ -38,6 +41,9 @@ class KDVM(BaseEstimator, ClassifierMixin):
         if self.kernel == 'rbf':
             Gram_Ak = pairwise.rbf_kernel(Ak, gamma = self.gamma)
             Gram_Ak_x = pairwise.rbf_kernel(Ak, x, gamma = self.gamma)
+        elif self.kernel == 'linear':
+            Gram_Ak = pairwise.linear_kernel(Ak)
+            Gram_Ak_x = pairwise.linear_kernel(Ak, x)
         temp = Gram_Ak + beta*I + lamda*L
         inverse = np.linalg.inv(temp)
         alphak = np.dot(inverse, Gram_Ak_x)
@@ -90,9 +96,13 @@ class KDVM(BaseEstimator, ClassifierMixin):
         x = np.reshape(X_test[query_index], (1, -1))
         Ak_i = np.transpose(Ak_i)
         if self.kernel == 'rbf':
-            Gram_x = pairwise.rbf_kernel(x)
-            Gram_Aki = pairwise.rbf_kernel(Ak_i)
-            Gram_x_Aki = pairwise.rbf_kernel(x, Ak_i)
+            Gram_x = pairwise.rbf_kernel(x, gamma = self.gamma)
+            Gram_Aki = pairwise.rbf_kernel(Ak_i, gamma = self.gamma)
+            Gram_x_Aki = pairwise.rbf_kernel(x, Ak_i, gamma = self.gamma)
+        elif self.kernel == 'linear':
+            Gram_x = pairwise.linear_kernel(x)
+            Gram_Aki = pairwise.linear_kernel(Ak_i)
+            Gram_x_Aki = pairwise.linear_kernel(x, Ak_i)
         temp = Gram_x - 2*np.dot(Gram_x_Aki, alphak_i) + np.dot(np.transpose(alphak_i), Gram_Aki).dot(alphak_i)
         residue = np.linalg.norm(temp)
         return residue
@@ -105,7 +115,6 @@ class KDVM(BaseEstimator, ClassifierMixin):
         return self
 
     def predict(self, X):
-        #gc.disable()
         X_test = X
         self.n_tests = len(X_test)
         self.Ak_list, self.index_list, self.alphak_list = self.get_matrix_all(n_neighbors = self.n_neighbors, X = self.X, y = self.y, X_test = X_test)
@@ -113,10 +122,6 @@ class KDVM(BaseEstimator, ClassifierMixin):
         n_class = self.n_class
 
         y_predict = np.zeros(n_tests)
-        
-        #widgets = ['Predict_progress: ', Percentage(), ' ', Bar('#'), ' ', Timer(), ' ', ETA()]
-        #p = ProgressBar(widgets = widgets, maxval = n_tests)
-        #p.start()
 
         for query_index in range(n_tests):
             Ak, index_per_class = self.Ak_list[query_index], self.index_list[query_index]
@@ -128,10 +133,6 @@ class KDVM(BaseEstimator, ClassifierMixin):
                 residues[class_label] = self.get_residue(query_index = query_index, X_test = X_test, Ak_i = Ak_i, alphak_i = alphak_i)
             y_predict[query_index] = np.argmin(residues)
 
-            #time.sleep(0.01)
-            #p.update(query_index+1)
-        #p.finish()
-        #gc.enable()
         return y_predict
 
     def fit_predict(self, X, y, X_test):

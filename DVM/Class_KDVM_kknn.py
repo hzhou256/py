@@ -1,4 +1,3 @@
-import time
 import collections
 import numpy as np
 from scipy.spatial.distance import cdist
@@ -6,7 +5,6 @@ from sklearn.metrics import pairwise
 from sklearn.neighbors import NearestNeighbors
 from scipy.linalg import fractional_matrix_power
 from sklearn.base import BaseEstimator, ClassifierMixin
-from progressbar import Percentage, Bar, Timer, ETA, ProgressBar
 
 
 class KDVM(BaseEstimator, ClassifierMixin):
@@ -25,7 +23,7 @@ class KDVM(BaseEstimator, ClassifierMixin):
         Laplacian matrix: (n_negihbors * n_class, n_negihbors * n_class)
         '''
         Ak = np.transpose(Ak_matrix)
-        W = pairwise.rbf_kernel(Ak)
+        W = pairwise.rbf_kernel(Ak, gamma = self.gamma)
         row_sum = np.sum(W, axis = 1)
         D = np.diag(row_sum)
         L_temp = D - W
@@ -68,18 +66,14 @@ class KDVM(BaseEstimator, ClassifierMixin):
         index_list = np.zeros((n_tests, n_class))
         alphak_list = np.zeros((n_tests, n_neighbors*n_class, 1))
 
-        widgets = ['Fit_progress: ', Percentage(), ' ', Bar('#'), ' ', Timer(), ' ', ETA()]
-        p = ProgressBar(widgets = widgets, maxval = n_tests)
-        p.start()
-
         knn_index_list = []
         for class_label in range(n_class):
             y_index = (y == class_label)
             X_class = X[y_index]
             if self.kernel == 'rbf': # kernel KNN
-                Gram_X_class = pairwise.rbf_kernel(X_class)
-                Gram_X_test_X_class = pairwise.rbf_kernel(X_test, X_class)
-                Gram_X_test = pairwise.rbf_kernel(X_test)
+                Gram_X_class = pairwise.rbf_kernel(X_class, gamma = self.gamma)
+                Gram_X_test_X_class = pairwise.rbf_kernel(X_test, X_class, gamma = self.gamma)
+                Gram_X_test = pairwise.rbf_kernel(X_test, gamma = self.gamma)
                 dist_X_class = self.get_dist_matrix(Gram_X_class, Gram_X_class, Gram_X_class)
                 dist_X_test_X_class = self.get_dist_matrix(Gram_X_test, Gram_X_class, Gram_X_test_X_class)
 
@@ -95,9 +89,8 @@ class KDVM(BaseEstimator, ClassifierMixin):
                 y_index = (y == class_label)
                 X_class = X[y_index]
                 knn_index = knn_index_list[class_label][query_index]
-                for index in knn_index:
-                    Ak[i] = X_class[index]
-                    i += 1
+                Ak[i:i+n_neighbors] = X_class[knn_index[:]]
+                i += n_neighbors
                 index_per_class[j] = i
                 j += 1
             
@@ -105,19 +98,16 @@ class KDVM(BaseEstimator, ClassifierMixin):
             index_list[query_index] = index_per_class
             L = self.Laplacian_matrix(Ak_list[query_index])
             alphak_list[query_index] = self.get_alphak(query_index = query_index, X_test = X_test, Ak = Ak_list[query_index], L = L, beta = self.beta, lamda = self.lamda)
-            time.sleep(0.01)
-            p.update(query_index+1)
 
-        p.finish()
         return Ak_list, index_list, alphak_list
 
     def get_residue(self, query_index, X_test, Ak_i, alphak_i):
         x = np.reshape(X_test[query_index], (1, -1))
         Ak_i = np.transpose(Ak_i)
         if self.kernel == 'rbf':
-            Gram_x = pairwise.rbf_kernel(x)
-            Gram_Aki = pairwise.rbf_kernel(Ak_i)
-            Gram_x_Aki = pairwise.rbf_kernel(x, Ak_i)
+            Gram_x = pairwise.rbf_kernel(x, gamma = self.gamma)
+            Gram_Aki = pairwise.rbf_kernel(Ak_i, gamma = self.gamma)
+            Gram_x_Aki = pairwise.rbf_kernel(x, Ak_i, gamma = self.gamma)
         temp = Gram_x - 2*np.dot(Gram_x_Aki, alphak_i) + np.dot(np.transpose(alphak_i), Gram_Aki).dot(alphak_i)
         residue = np.linalg.norm(temp)
         return residue
@@ -137,10 +127,6 @@ class KDVM(BaseEstimator, ClassifierMixin):
         n_class = self.n_class
 
         y_predict = np.zeros(n_tests)
-        
-        widgets = ['Predict_progress: ', Percentage(), ' ', Bar('#'), ' ', Timer(), ' ', ETA()]
-        p = ProgressBar(widgets = widgets, maxval = n_tests)
-        p.start()
 
         for query_index in range(n_tests):
             Ak, index_per_class = self.Ak_list[query_index], self.index_list[query_index]
@@ -152,9 +138,6 @@ class KDVM(BaseEstimator, ClassifierMixin):
                 residues[class_label] = self.get_residue(query_index = query_index, X_test = X_test, Ak_i = Ak_i, alphak_i = alphak_i)
             y_predict[query_index] = np.argmin(residues)
 
-            time.sleep(0.01)
-            p.update(query_index+1)
-        p.finish()
         return y_predict
 
     def fit_predict(self, X, y, X_test):

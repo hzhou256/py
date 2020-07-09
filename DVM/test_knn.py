@@ -4,8 +4,8 @@ from sklearn import metrics
 from sklearn.model_selection import GridSearchCV, cross_validate, StratifiedKFold
 
 
-dataset = ['australian', 'breastw', 'diabetes', 'german', 'heart', 'ionosphere', 'sonar', 'bupa', 'blood', 'spam']
-for i in range(4, 5):
+dataset = ['german', 'ionosphere', 'sonar']
+for i in range(2, 3):
     name = dataset[i]
     print(name)
     f1 = np.loadtxt('E:/Study/Bioinformatics/UCI/' + name + '/data.csv', delimiter = ',')
@@ -22,11 +22,11 @@ for i in range(4, 5):
 
     max_val = int(min(cnt_0, cnt_1)/5*4)
     num = int((max_val - max_val%5)/5)
-    '''
+    
     cv = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
     parameters = {'gamma': np.logspace(5, -15, base = 2, num = 21), 'n_neighbors': np.linspace(5, max_val, num = num, dtype = int)}
 
-    grid = GridSearchCV(Class_KDVM_knn.KDVM(kernel = 'rbf'), parameters, n_jobs = -1, cv = cv, verbose = 1)
+    grid = GridSearchCV(Class_KDVM_knn.KDVM(kernel = 'rbf'), parameters, n_jobs = -1, cv = cv, verbose = 2)
     grid.fit(X, y)
     gamma = grid.best_params_['gamma']
     n_neighbors = grid.best_params_['n_neighbors']
@@ -38,7 +38,7 @@ for i in range(4, 5):
 
     print(gamma)
     print(n_neighbors)
-    '''
+    
     '''
     clf = Class_KDVM_knn.KDVM()
     y_pred = clf.fit_predict(X, y, X)
@@ -54,25 +54,3 @@ for i in range(4, 5):
     mean_ACC = np.mean(five_fold['test_score'])
     print(mean_ACC)
     '''
-
-    cv = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
-    parameters_1 = {'n_neighbors': np.linspace(5, max_val, num = num, dtype = int)}
-
-    grid_1 = GridSearchCV(Class_KDVM_knn.KDVM(kernel = 'rbf'), parameters_1, n_jobs = -1, cv = cv, verbose = 1)
-    grid_1.fit(X, y)
-    
-    n_neighbors = grid_1.best_params_['n_neighbors']
-
-    parameters_2 = {'gamma': np.logspace(5, -15, base = 2, num = 21)}
-    grid_2 = GridSearchCV(Class_KDVM_knn.KDVM(kernel = 'rbf', n_neighbors = n_neighbors), parameters_2, n_jobs = -1, cv = cv, verbose = 1)
-    grid_2.fit(X, y)
-
-    gamma = grid_2.best_params_['gamma']
-
-    clf = Class_KDVM_knn.KDVM(kernel = 'rbf', gamma = gamma, n_neighbors = n_neighbors)
-    five_fold = cross_validate(clf, X, y, cv = cv, scoring = 'accuracy', n_jobs = -1)
-    mean_ACC = np.mean(five_fold['test_score'])
-    print(mean_ACC)
-
-    print(gamma)
-    print(n_neighbors)
