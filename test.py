@@ -1,6 +1,7 @@
 import collections
 import numpy as np
 from sklearn import metrics
+from sklearn.neighbors import NearestNeighbors
 from sklearn.model_selection import GridSearchCV, cross_validate, StratifiedKFold
 
 
@@ -12,9 +13,15 @@ for i in range(0, 1):
     X = f1[:, 0:-1]
     y = f1[:, -1]
 
-    target = np.array([0, 1, 2, 3])
-    index = np.arange(len(y))
-    a = X[target[:]]
-    b = np.zeros(np.shape(a))
-    b[0:4] = a
-    print(b)
+    neigh = NearestNeighbors(n_neighbors = 5, algorithm = 'kd_tree', n_jobs = -1)
+    neigh.fit(X) # normal KNN
+    dist, index = neigh.kneighbors(return_distance = True)
+    #print(dist, index)
+    rho = np.average(dist, axis = 1)
+    dist = metrics.pairwise.euclidean_distances(X, squared = True)
+    local_dist = np.copy(dist)
+    for i in range(len(X)):
+        local_dist[i] = dist[i] / rho[i]
+        local_dist[:, i] = dist[:, i] / rho[i]
+    W = np.exp(-local_dist)
+    print(W)
