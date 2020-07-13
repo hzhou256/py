@@ -6,7 +6,7 @@ from sklearn import preprocessing
 from sklearn.model_selection import GridSearchCV, cross_validate, StratifiedKFold
 
 
-dataset = ['wine', 'abalone', 'iris', 'RNA', 'vehicle', 'glass']
+dataset = ['wine', 'iris', 'glass', 'RNA', 'vehicle', 'abalone']
 for i in range(4, 5):
     name = dataset[i]
     print(name)
@@ -26,7 +26,8 @@ for i in range(4, 5):
     
     cv = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
     #parameters = {'gamma': np.logspace(5, -15, base = 2, num = 21), 'n_neighbors': np.linspace(5, max_val, num = num, dtype = int)}
-    parameters = {'gamma': np.logspace(5, -15, base = 2, num = 21), 'n_neighbors': np.linspace(10, max_val, num = 10, dtype = int)}
+    parameters = {'gamma': np.logspace(5, -15, base = 2, num = 21), 'n_neighbors': np.linspace(10, max_val, num = int(num/2), dtype = int)}
+    
     
     grid = GridSearchCV(Class_KDVM_Lap.KDVM(kernel = 'rbf'), parameters, n_jobs = -1, cv = cv, verbose = 2)
     grid.fit(X, y)
