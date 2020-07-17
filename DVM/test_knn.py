@@ -1,6 +1,7 @@
 import numpy as np
 import Class_KDVM_knn
 from sklearn import metrics
+from sklearn.multiclass import OneVsOneClassifier
 from sklearn.model_selection import GridSearchCV, cross_validate, StratifiedKFold
 
 

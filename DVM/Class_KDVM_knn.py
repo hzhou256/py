@@ -1,7 +1,8 @@
 import collections
 import numpy as np
-from scipy.spatial.distance import cdist
+from sklearn import preprocessing
 from sklearn.metrics import pairwise
+from scipy.spatial.distance import cdist
 from sklearn.neighbors import NearestNeighbors
 from scipy.linalg import fractional_matrix_power
 from sklearn.base import BaseEstimator, ClassifierMixin
@@ -58,7 +59,7 @@ class KDVM(BaseEstimator, ClassifierMixin):
         n_tests = np.shape(X_test)[0]
         cnt = dict(collections.Counter(y))
         n_class = len(cnt)
-        neigh = NearestNeighbors(n_neighbors = n_neighbors, algorithm = 'kd_tree', n_jobs = -1)
+        neigh = NearestNeighbors(n_neighbors = n_neighbors, algorithm = 'auto', n_jobs = -1)
 
         Ak_list = np.zeros((n_tests, n_features, n_neighbors*n_class))
         index_list = np.zeros((n_tests, n_class))
@@ -122,26 +123,34 @@ class KDVM(BaseEstimator, ClassifierMixin):
         n_class = self.n_class
 
         y_predict = np.zeros(n_tests)
+        residues = np.zeros((n_tests, n_class))
 
         for query_index in range(n_tests):
             Ak, index_per_class = self.Ak_list[query_index], self.index_list[query_index]
             alphak = self.alphak_list[query_index]
-            residues = np.zeros(n_class)
             for class_label in range(n_class):
                 Ak_i = Ak[:, int(index_per_class[class_label]-self.n_neighbors):int(index_per_class[class_label])]
                 alphak_i = alphak[int(index_per_class[class_label]-self.n_neighbors):int(index_per_class[class_label])]
-                residues[class_label] = self.get_residue(query_index = query_index, X_test = X_test, Ak_i = Ak_i, alphak_i = alphak_i)
-            y_predict[query_index] = np.argmin(residues)
+                residues[query_index, class_label] = self.get_residue(query_index = query_index, X_test = X_test, Ak_i = Ak_i, alphak_i = alphak_i)
 
+            y_predict[query_index] = np.argmin(residues[query_index])
+            self.prob = preprocessing.normalize((np.exp(-residues)), norm = 'l1', axis = 1)
+            #self.prob = preprocessing.normalize((residues), norm = 'l1', axis = 1)
         return y_predict
 
+    
     def fit_predict(self, X, y, X_test):
         self.fit(X, y)
         y_pred = self.predict(X_test)
         return y_pred
     
-    '''
+    
     def predict_proba(self, X):
-
+        self.predict(X)
+        return self.prob # return decision function
+    
+    '''
     def decision_function(self, X):
+        self.predict(X)
+        return self.decision  
     '''
