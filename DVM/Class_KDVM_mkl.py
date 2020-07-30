@@ -1,8 +1,7 @@
 import collections
 import numpy as np
-from sklearn import preprocessing
-from sklearn.metrics import pairwise
 from scipy.spatial.distance import cdist
+from sklearn.metrics import pairwise
 from sklearn.neighbors import NearestNeighbors
 from scipy.linalg import fractional_matrix_power
 from sklearn.base import BaseEstimator, ClassifierMixin
@@ -28,15 +27,13 @@ class KDVM(BaseEstimator, ClassifierMixin):
         return K
 
 
+
     def Laplacian_matrix(self, Ak_matrix):
         '''
         Laplacian matrix: (n_negihbors * n_class, n_negihbors * n_class)
         '''
         Ak = np.transpose(Ak_matrix)
-
         W = self.kernel_matrix(Ak, Ak)
-        #W = pairwise.cosine_similarity(Ak)
-
         row_sum = np.sum(W, axis = 1)
         D = np.diag(row_sum)
         L_temp = D - W
@@ -44,19 +41,27 @@ class KDVM(BaseEstimator, ClassifierMixin):
         L = np.dot(temp, L_temp).dot(temp)
         return L
 
+
     def get_alphak(self, query_index, X_test, Ak, L, beta, lamda):
         I = np.identity(np.shape(Ak)[1])
         x = np.reshape(X_test[query_index], (1, -1))
         Ak = np.transpose(Ak)
-        
+
         Gram_Ak = self.kernel_matrix(Ak, Ak)
         Gram_Ak_x = self.kernel_matrix(Ak, x)
 
         temp = Gram_Ak + beta*I + lamda*L
         inverse = np.linalg.inv(temp)
         alphak = np.dot(inverse, Gram_Ak_x)
-        return alphak    
+        return alphak
 
+    def get_dist_matrix(self, Gram_x, Gram_y, Gram_xy):
+        m, n = np.shape(Gram_xy)
+        dist = np.zeros((m, n))
+        for i in range(m):
+            for j in range(n):
+                dist[i][j] = np.sqrt(Gram_x[i][i] + Gram_y[j][j] - 2*Gram_xy[i][j])
+        return dist
 
     def get_matrix_all(self, n_neighbors, X, X_test, y):
         '''
@@ -66,7 +71,7 @@ class KDVM(BaseEstimator, ClassifierMixin):
         n_tests = np.shape(X_test)[0]
         cnt = dict(collections.Counter(y))
         n_class = len(cnt)
-        neigh = NearestNeighbors(n_neighbors = n_neighbors, algorithm = 'auto', n_jobs = -1)
+        neigh = NearestNeighbors(n_neighbors = n_neighbors, metric = 'precomputed', n_jobs = -1)
 
         Ak_list = np.zeros((n_tests, n_features, n_neighbors*n_class))
         index_list = np.zeros((n_tests, n_class))
@@ -76,8 +81,16 @@ class KDVM(BaseEstimator, ClassifierMixin):
         for class_label in range(n_class):
             y_index = (y == class_label)
             X_class = X[y_index]
-            neigh.fit(X_class) # normal KNN
-            knn_index = neigh.kneighbors(X_test, return_distance = False)
+            
+            Gram_X_class = self.kernel_matrix(X_class, X_class)
+            Gram_X_test_X_class = self.kernel_matrix(X_test, X_class)
+            Gram_X_test = self.kernel_matrix(X_test, X_test)
+
+            dist_X_class = self.get_dist_matrix(Gram_X_class, Gram_X_class, Gram_X_class)
+            dist_X_test_X_class = self.get_dist_matrix(Gram_X_test, Gram_X_class, Gram_X_test_X_class)
+
+            neigh.fit(dist_X_class)
+            knn_index = neigh.kneighbors(dist_X_test_X_class, return_distance = False)
             knn_index_list += [knn_index]
 
         for query_index in range(n_tests):
@@ -107,7 +120,7 @@ class KDVM(BaseEstimator, ClassifierMixin):
         Gram_x = self.kernel_matrix(x, x)
         Gram_Aki = self.kernel_matrix(Ak_i, Ak_i)
         Gram_x_Aki = self.kernel_matrix(x, Ak_i)
-        
+
         temp = Gram_x - 2*np.dot(Gram_x_Aki, alphak_i) + np.dot(np.transpose(alphak_i), Gram_Aki).dot(alphak_i)
         residue = np.linalg.norm(temp)
         return residue
@@ -127,34 +140,26 @@ class KDVM(BaseEstimator, ClassifierMixin):
         n_class = self.n_class
 
         y_predict = np.zeros(n_tests)
-        residues = np.zeros((n_tests, n_class))
 
         for query_index in range(n_tests):
             Ak, index_per_class = self.Ak_list[query_index], self.index_list[query_index]
             alphak = self.alphak_list[query_index]
+            residues = np.zeros(n_class)
             for class_label in range(n_class):
                 Ak_i = Ak[:, int(index_per_class[class_label]-self.n_neighbors):int(index_per_class[class_label])]
                 alphak_i = alphak[int(index_per_class[class_label]-self.n_neighbors):int(index_per_class[class_label])]
-                residues[query_index, class_label] = self.get_residue(query_index = query_index, X_test = X_test, Ak_i = Ak_i, alphak_i = alphak_i)
+                residues[class_label] = self.get_residue(query_index = query_index, X_test = X_test, Ak_i = Ak_i, alphak_i = alphak_i)
+            y_predict[query_index] = np.argmin(residues)
 
-            y_predict[query_index] = np.argmin(residues[query_index])
-            self.prob = preprocessing.normalize((np.exp(-residues)), norm = 'l1', axis = 1)
-            #self.prob = preprocessing.normalize((residues), norm = 'l1', axis = 1)
         return y_predict
 
-    
     def fit_predict(self, X, y, X_test):
         self.fit(X, y)
         y_pred = self.predict(X_test)
         return y_pred
     
-    
-    def predict_proba(self, X):
-        self.predict(X)
-        return self.prob # return decision function
-    
     '''
+    def predict_proba(self, X):
+
     def decision_function(self, X):
-        self.predict(X)
-        return self.decision  
     '''

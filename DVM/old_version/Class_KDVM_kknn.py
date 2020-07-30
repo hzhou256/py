@@ -18,12 +18,22 @@ class KDVM(BaseEstimator, ClassifierMixin):
         self.kernel = kernel
         self.gamma = gamma
 
+    def kernel_matrix(self, X, Y):
+        if self.kernel == 'rbf':
+            K = pairwise.rbf_kernel(X, Y, gamma = self.gamma)
+        elif self.kernel == 'linear':
+            K = pairwise.linear_kernel(X, Y)
+        
+        return K
+
+
+
     def Laplacian_matrix(self, Ak_matrix):
         '''
         Laplacian matrix: (n_negihbors * n_class, n_negihbors * n_class)
         '''
         Ak = np.transpose(Ak_matrix)
-        W = pairwise.rbf_kernel(Ak, gamma = self.gamma)
+        W = self.kernel_matrix(Ak, Ak)
         row_sum = np.sum(W, axis = 1)
         D = np.diag(row_sum)
         L_temp = D - W
@@ -36,9 +46,10 @@ class KDVM(BaseEstimator, ClassifierMixin):
         I = np.identity(np.shape(Ak)[1])
         x = np.reshape(X_test[query_index], (1, -1))
         Ak = np.transpose(Ak)
-        if self.kernel == 'rbf':
-            Gram_Ak = pairwise.rbf_kernel(Ak, gamma = self.gamma)
-            Gram_Ak_x = pairwise.rbf_kernel(Ak, x, gamma = self.gamma)
+
+        Gram_Ak = self.kernel_matrix(Ak, Ak)
+        Gram_Ak_x = self.kernel_matrix(Ak, x)
+
         temp = Gram_Ak + beta*I + lamda*L
         inverse = np.linalg.inv(temp)
         alphak = np.dot(inverse, Gram_Ak_x)
@@ -70,12 +81,13 @@ class KDVM(BaseEstimator, ClassifierMixin):
         for class_label in range(n_class):
             y_index = (y == class_label)
             X_class = X[y_index]
-            if self.kernel == 'rbf': # kernel KNN
-                Gram_X_class = pairwise.rbf_kernel(X_class, gamma = self.gamma)
-                Gram_X_test_X_class = pairwise.rbf_kernel(X_test, X_class, gamma = self.gamma)
-                Gram_X_test = pairwise.rbf_kernel(X_test, gamma = self.gamma)
-                dist_X_class = self.get_dist_matrix(Gram_X_class, Gram_X_class, Gram_X_class)
-                dist_X_test_X_class = self.get_dist_matrix(Gram_X_test, Gram_X_class, Gram_X_test_X_class)
+            
+            Gram_X_class = self.kernel_matrix(X_class, X_class)
+            Gram_X_test_X_class = self.kernel_matrix(X_test, X_class)
+            Gram_X_test = self.kernel_matrix(X_test, X_test)
+
+            dist_X_class = self.get_dist_matrix(Gram_X_class, Gram_X_class, Gram_X_class)
+            dist_X_test_X_class = self.get_dist_matrix(Gram_X_test, Gram_X_class, Gram_X_test_X_class)
 
             neigh.fit(dist_X_class)
             knn_index = neigh.kneighbors(dist_X_test_X_class, return_distance = False)
@@ -104,10 +116,11 @@ class KDVM(BaseEstimator, ClassifierMixin):
     def get_residue(self, query_index, X_test, Ak_i, alphak_i):
         x = np.reshape(X_test[query_index], (1, -1))
         Ak_i = np.transpose(Ak_i)
-        if self.kernel == 'rbf':
-            Gram_x = pairwise.rbf_kernel(x, gamma = self.gamma)
-            Gram_Aki = pairwise.rbf_kernel(Ak_i, gamma = self.gamma)
-            Gram_x_Aki = pairwise.rbf_kernel(x, Ak_i, gamma = self.gamma)
+
+        Gram_x = self.kernel_matrix(x, x)
+        Gram_Aki = self.kernel_matrix(Ak_i, Ak_i)
+        Gram_x_Aki = self.kernel_matrix(x, Ak_i)
+        
         temp = Gram_x - 2*np.dot(Gram_x_Aki, alphak_i) + np.dot(np.transpose(alphak_i), Gram_Aki).dot(alphak_i)
         residue = np.linalg.norm(temp)
         return residue

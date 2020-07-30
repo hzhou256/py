@@ -2,6 +2,6 @@ import os
 
 
 
-os.system('python E:/Study/iFeature/iFeature.py --file E:/Study/Bioinformatics/DeepAVP/train.fasta --out E:/Study/Bioinformatics/DeepAVP/DPC/train_DPC.csv --type DPC')
-os.system('python E:/Study/iFeature/iFeature.py --file E:/Study/Bioinformatics/DeepAVP/test.fasta --out E:/Study/Bioinformatics/DeepAVP/DPC/test_DPC.csv --type DPC')
+os.system('python D:/Study/iFeature/iFeature.py --file D:/Study/Bioinformatics/wh/fasta/D1_training.txt --out D:/Study/Bioinformatics/wh/DPC/train_DPC.csv --type DPC')
+os.system('python D:/Study/iFeature/iFeature.py --file D:/Study/Bioinformatics/wh/fasta/D1_testing.txt --out D:/Study/Bioinformatics/wh/DPC/test_DPC.csv --type DPC')
 

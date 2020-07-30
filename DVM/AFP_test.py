@@ -22,7 +22,7 @@ methods_name = ['ASDC', 'CKSAAP', 'DPC']
 for ds in range(0, 1):
     name_ds = dataset_name[ds]
     print(name_ds)
-    for it in range(1, 2):
+    for it in range(0, 1):
         name = methods_name[it]
         print(name)
         f1 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/' + name +'/train_' + name +'.csv', delimiter = ',', skiprows = 1)
@@ -47,7 +47,7 @@ for ds in range(0, 1):
         num = int((max_val - max_val%5)/5)
 
         cv = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
-        parameters = {'gamma': np.logspace(5, -15, base = 2, num = 21), 'n_neighbors': np.linspace(110, 200, num = 10, dtype = int)}
+        parameters = {'gamma': np.logspace(5, -15, base = 2, num = 21), 'n_neighbors': np.linspace(210, 300, num = 10, dtype = int)}
         
         grid = GridSearchCV(Class_KDVM_knn.KDVM(kernel = 'rbf'), parameters, n_jobs = -1, cv = cv, verbose = 2)
         grid.fit(X_train, y_train)
