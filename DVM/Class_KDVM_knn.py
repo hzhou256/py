@@ -138,8 +138,9 @@ class KDVM(BaseEstimator, ClassifierMixin):
                 residues[query_index, class_label] = self.get_residue(query_index = query_index, X_test = X_test, Ak_i = Ak_i, alphak_i = alphak_i)
 
             y_predict[query_index] = np.argmin(residues[query_index])
-            self.prob = preprocessing.normalize((np.exp(-residues)), norm = 'l1', axis = 1)
+            #self.prob = preprocessing.normalize((np.exp(-residues)), norm = 'l1', axis = 1)
             #self.prob = preprocessing.normalize((residues), norm = 'l1', axis = 1)
+            self.prob = residues
         return y_predict
 
     

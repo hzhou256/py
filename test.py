@@ -29,7 +29,7 @@ for i in range(0, 1):
 
     clf = DVM.Class_KDVM_knn.KDVM(kernel = 'rbf', gamma = 1, n_neighbors = 5)
     clf.fit(X, y)
-    y_prob = clf.predict_proba(X)
+    y_prob = clf.decision_function(X)
     print(y_prob)
 
     

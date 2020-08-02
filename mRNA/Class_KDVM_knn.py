@@ -5,13 +5,14 @@ from sklearn.metrics import pairwise
 from scipy.spatial.distance import cdist
 from sklearn.neighbors import NearestNeighbors
 from scipy.linalg import fractional_matrix_power
+from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.base import BaseEstimator, ClassifierMixin
 
 
 class KDVM(BaseEstimator, ClassifierMixin):
-    '''
+    """
     Kernelized DVM
-    '''
+    """
     def __init__(self, beta = 0.1, lamda = 0.1, n_neighbors = 5, kernel = 'rbf', gamma = 0.5):
         self.beta = beta
         self.lamda = lamda
@@ -29,9 +30,9 @@ class KDVM(BaseEstimator, ClassifierMixin):
 
 
     def Laplacian_matrix(self, Ak_matrix):
-        '''
+        """
         Laplacian matrix: (n_negihbors * n_class, n_negihbors * n_class)
-        '''
+        """
         Ak = np.transpose(Ak_matrix)
 
         W = self.kernel_matrix(Ak, Ak)
@@ -59,9 +60,9 @@ class KDVM(BaseEstimator, ClassifierMixin):
 
 
     def get_matrix_all(self, n_neighbors, X, X_test, y):
-        '''
+        """
         return Ak_list, index_list, L_list, alphak_list for X_test
-        '''
+        """
         n_features = np.shape(X)[1]
         n_tests = np.shape(X_test)[0]
         cnt = dict(collections.Counter(y))
@@ -127,7 +128,7 @@ class KDVM(BaseEstimator, ClassifierMixin):
         n_class = self.n_class
 
         y_predict = np.zeros(n_tests)
-        residues = np.zeros((n_tests, n_class))
+        self.residues = np.zeros((n_tests, n_class))
 
         for query_index in range(n_tests):
             Ak, index_per_class = self.Ak_list[query_index], self.index_list[query_index]
@@ -135,10 +136,10 @@ class KDVM(BaseEstimator, ClassifierMixin):
             for class_label in range(n_class):
                 Ak_i = Ak[:, int(index_per_class[class_label]-self.n_neighbors):int(index_per_class[class_label])]
                 alphak_i = alphak[int(index_per_class[class_label]-self.n_neighbors):int(index_per_class[class_label])]
-                residues[query_index, class_label] = self.get_residue(query_index = query_index, X_test = X_test, Ak_i = Ak_i, alphak_i = alphak_i)
+                self.residues[query_index, class_label] = self.get_residue(query_index = query_index, X_test = X_test, Ak_i = Ak_i, alphak_i = alphak_i)
 
-            y_predict[query_index] = np.argmin(residues[query_index])
-            self.prob = preprocessing.normalize((np.exp(-residues)), norm = 'l1', axis = 1)
+            y_predict[query_index] = np.argmin(self.residues[query_index])
+            self.prob = preprocessing.normalize((np.exp(-self.residues)), norm = 'l1', axis = 1)
             #self.prob = preprocessing.normalize((residues), norm = 'l1', axis = 1)
         return y_predict
 
@@ -147,14 +148,15 @@ class KDVM(BaseEstimator, ClassifierMixin):
         self.fit(X, y)
         y_pred = self.predict(X_test)
         return y_pred
-    
+
+
     
     def predict_proba(self, X):
         self.predict(X)
-        return self.prob # return decision function
+        return self.prob 
     
-    '''
+    
     def decision_function(self, X):
         self.predict(X)
-        return self.decision  
-    '''
+        return -self.residues
+    
