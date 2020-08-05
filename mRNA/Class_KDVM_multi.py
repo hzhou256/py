@@ -23,7 +23,6 @@ class KDVM(BaseEstimator, ClassifierMixin):
             K = pairwise.rbf_kernel(X, Y, gamma=self.gamma)
         elif self.kernel == 'linear':
             K = pairwise.linear_kernel(X, Y)
-
         return K
 
     def Laplacian_matrix(self, Ak_matrix):
@@ -61,8 +60,7 @@ class KDVM(BaseEstimator, ClassifierMixin):
         """
         n_features = np.shape(X)[1]
         n_tests = np.shape(X_test)[0]
-
-        n_class = np.shape(y)[1]
+        n_class = 2
         neigh = NearestNeighbors(n_neighbors=n_neighbors, algorithm='auto', n_jobs=-1)
 
         Ak_list = np.zeros((n_tests, n_features, n_neighbors * n_class))
@@ -71,7 +69,7 @@ class KDVM(BaseEstimator, ClassifierMixin):
 
         knn_index_list = []
         for class_label in range(n_class):
-            y_index = (y[:, class_label] == 1)
+            y_index = (y == class_label)
             X_class = X[y_index]
             neigh.fit(X_class)  # normal KNN
             knn_index = neigh.kneighbors(X_test, return_distance=False)
@@ -82,7 +80,7 @@ class KDVM(BaseEstimator, ClassifierMixin):
             index_per_class = np.zeros(n_class)
             i, j = 0, 0
             for class_label in range(n_class):
-                y_index = (y[:, class_label] == 1)
+                y_index = (y == class_label)
                 X_class = X[y_index]
                 knn_index = knn_index_list[class_label][query_index]
                 Ak[i:i + n_neighbors] = X_class[knn_index[:]]
@@ -113,44 +111,79 @@ class KDVM(BaseEstimator, ClassifierMixin):
     def fit(self, X, y):
         self.X = X
         self.y = y
-        self.n_class = np.shape(y)[1]
+        self.n_class = 2
         return self
 
     def predict(self, X):
         X_test = X
-        self.n_tests = len(X_test)
-        self.Ak_list, self.index_list, self.alphak_list = self.get_matrix_all(n_neighbors=self.n_neighbors, X=self.X,
-                                                                              y=self.y, X_test=X_test)
-        n_tests = self.n_tests
+        Ak_list, index_list, alphak_list = self.get_matrix_all(n_neighbors=self.n_neighbors, X=self.X,
+                                                               y=self.y, X_test=X_test)
+        n_tests = len(X_test)
         n_class = self.n_class
 
-        self.residues = np.zeros((n_tests, n_class))
+        y_predict = np.zeros(n_tests)
+        residues = np.zeros((n_tests, n_class))
+        prob = np.zeros((n_tests, n_class))
 
         for query_index in range(n_tests):
-            Ak, index_per_class = self.Ak_list[query_index], self.index_list[query_index]
-            alphak = self.alphak_list[query_index]
+            Ak, index_per_class = Ak_list[query_index], index_list[query_index]
+            alphak = alphak_list[query_index]
             for class_label in range(n_class):
                 Ak_i = Ak[:, int(index_per_class[class_label] - self.n_neighbors):int(index_per_class[class_label])]
                 alphak_i = alphak[
                            int(index_per_class[class_label] - self.n_neighbors):int(index_per_class[class_label])]
-                self.residues[query_index, class_label] = self.get_residue(query_index=query_index, X_test=X_test,
-                                                                           Ak_i=Ak_i, alphak_i=alphak_i)
+                residues[query_index, class_label] = self.get_residue(query_index=query_index, X_test=X_test,
+                                                                      Ak_i=Ak_i, alphak_i=alphak_i)
 
-            self.prob = preprocessing.normalize((np.exp(-self.residues)), norm='l1', axis=1)
-            y_predict = y_predict = self.prob > (1/n_class)
-            y_predict = y_predict + 0
-            # self.prob = preprocessing.normalize((residues), norm = 'l1', axis = 1)
-        return y_predict
+            for class_label in range(n_class):
+                prob[query_index, class_label] = 1 - (
+                        residues[query_index, class_label] / np.sum(residues[query_index]))
 
-    def fit_predict(self, X, y, X_test):
-        self.fit(X, y)
-        y_pred = self.predict(X_test)
+            y_predict[query_index] = np.argmin(residues[query_index])
+
+        return y_predict, prob[:, 1]
+
+
+class multilabel_KDVM(BaseEstimator, ClassifierMixin):
+    """
+    Multi-label Kernel DVM
+    """
+
+    def __init__(self, beta=0.1, lamda=0.1, n_neighbors=5, kernel='rbf', gamma=0.5):
+        self.beta = beta
+        self.lamda = lamda
+        self.n_neighbors = n_neighbors
+        self.kernel = kernel
+        self.gamma = gamma
+
+    def fit(self, X, y):
+        self.n_class = np.shape(y)[1]
+        self.X_train = X
+        self.y_train = y
+        return self
+
+    def predict(self, X):
+        X_test = X
+        X_train = self.X_train
+        y_train = self.y_train
+
+        n_test = len(X_test)
+
+        y_pred = np.zeros((n_test, self.n_class))
+        self.y_proba = np.zeros((n_test, self.n_class))
+        for col in range(self.n_class):
+            y = np.ravel(y_train[:, col])
+
+            clf = KDVM(n_neighbors=self.n_neighbors, gamma=self.gamma, kernel=self.kernel)
+            clf.fit(X_train, y)
+            temp_pred, temp_prob = clf.predict(X_test)
+
+            y_pred[:, col] = temp_pred
+            self.y_proba[:, col] = temp_prob
         return y_pred
 
     def predict_proba(self, X):
-        self.predict(X)
-        return self.prob
+        # self.predict(X)
+        return self.y_proba
 
-    def decision_function(self, X):
-        self.predict(X)
-        return self.residues
+    # def decision_function(self, X):
