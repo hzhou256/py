@@ -24,16 +24,20 @@ methods_name = ['188-bit', 'AAC', 'ASDC', 'CKSAAP', 'DPC']
 c_list = [98.086, 25.533, 4.953, 2.336, 1.688]
 auc_list = [0.8835, 0.9141, 0.9532, 0.9595, 0.9457]
 
+font = {'size': 14}
+font_legend = {'size': 10}
+plt.figure(figsize = [4, 4])
+
 for ds in range(1, 2):
     name_ds = dataset_name[ds]
     print(name_ds)
     for it in range(5):
         name = methods_name[it]
 
-        f1 = np.loadtxt('E:/Study/Bioinformatics/AFP/kernel_matrix/' + name_ds + '/KM_train_tanimoto/KM_tanimoto_' + name + '_train.csv', delimiter = ',')
-        f2 = np.loadtxt('E:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/train_label.csv', delimiter = ',')
-        f3 = np.loadtxt('E:/Study/Bioinformatics/AFP/kernel_matrix/' + name_ds + '/KM_test_tanimoto/KM_tanimoto_' + name + '_test.csv', delimiter = ',')
-        f4 = np.loadtxt('E:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/test_label.csv', delimiter = ',')
+        f1 = np.loadtxt('D:/Study/Bioinformatics/AFP/kernel_matrix/' + name_ds + '/KM_train_tanimoto/KM_tanimoto_' + name + '_train.csv', delimiter = ',')
+        f2 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/train_label.csv', delimiter = ',')
+        f3 = np.loadtxt('D:/Study/Bioinformatics/AFP/kernel_matrix/' + name_ds + '/KM_test_tanimoto/KM_tanimoto_' + name + '_test.csv', delimiter = ',')
+        f4 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/test_label.csv', delimiter = ',')
 
         np.set_printoptions(suppress = True)
         gram = f1
@@ -49,9 +53,11 @@ for ds in range(1, 2):
         fpr, tpr, thresholds = metrics.roc_curve(y_test, y_score)
         plt.plot(fpr, tpr, label = name + ' - AUC: ' + str(auc_list[it]))  
 
-    plt.legend()
-    plt.title(name_ds)
-    plt.xlabel('False positive rate')
-    plt.ylabel('True positive rate')
-    plt.savefig("E:/论文/图表/ROC_PR/不同特征/ROC_" + name_ds + ".png")
+    plt.legend(prop = font_legend)
+    plt.title(name_ds, font)
+    plt.xlabel('False positive rate', font)
+    plt.ylabel('True positive rate', font)
+    
+    plt.tight_layout()
+    plt.savefig("D:\\Study\\论文\\achemso\\figure\\ROC_PR_fix\\diff_feature\\ROC_" + name_ds + ".png", dpi=600)
     plt.show()

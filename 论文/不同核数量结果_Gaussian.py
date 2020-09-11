@@ -11,9 +11,15 @@ y_MCC_DS1 = [0.7738,0.7801,0.7868,0.7749,0.7899]
 y_ACC_DS2 = [0.9251,0.9311,0.9354,0.9354,0.9418]
 y_MCC_DS2 = [0.8507,0.8628,0.8716,0.8717,0.8846]
 
+
+
 dataset_name = ['Antifp_Main', 'Antifp_DS1', 'Antifp_DS2']
 for ds in range(3):
     name_ds = dataset_name[ds]
+
+    font = {'size': 14}
+    plt.figure(figsize = [5, 4])
+
     print('dataset:', name_ds)
     if ds == 0:
         y_ACC = y_ACC_Main
@@ -32,11 +38,12 @@ for ds in range(3):
     max_MCC = np.max(y_MCC)
     plt.text(x = np.argmax(y_ACC), y = max_ACC, s = 'ACC = ' + str(max_ACC), ha = 'left')
     plt.text(x = np.argmax(y_MCC), y = max_MCC, s = 'MCC = ' + str(max_MCC), ha = 'left')
-    plt.legend(loc = 'lower right', fontsize = 8)
-    plt.xlabel("Kernel number")
-    plt.ylabel("Score")
+    plt.legend(loc = 'lower right', fontsize = 9)
+    plt.xlabel("Kernel number", font)
+    plt.ylabel("Score", font)
     #plt.ylim((0.6, 1))
     plt.xticks([1,2,3,4,5])
     plt.title(name_ds + " Gaussian")
-    plt.savefig("E:/论文/图表/不同核数量结果图/" + name_ds + "_Gaussian_.png")
+    plt.tight_layout()
+    plt.savefig("D:\\Study\\论文\\achemso\\figure\\kernels\\" + name_ds + "_Gaussian_.png", dpi = 600)
     plt.show()

@@ -79,9 +79,11 @@ for i in range(0, 7):
             best_ham = np.mean(ham_loss_score)
             best_AP = np.mean(AP_score)
             best_gamma = gamma
-    
-    print("=====================")
+
     print(best_gamma)
+
+    print("=====================")
+
     print(best_ACC)
     print(best_zero)
     print(best_ham)

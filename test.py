@@ -1,37 +1,31 @@
-import collections
 import numpy as np
-import DVM.Class_KDVM_knn
 from sklearn import metrics
-from sklearn import preprocessing
-from sklearn.multiclass import OneVsOneClassifier
-from sklearn.model_selection import GridSearchCV, cross_validate, StratifiedKFold
+from sklearn.svm import SVC
+from sklearn import datasets
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.model_selection import GridSearchCV, cross_validate, KFold, train_test_split
 
 
-dataset = ['wine', 'iris', 'glass', 'RNA', 'vehicle', 'abalone']
-for i in range(0, 1):
-    name = dataset[i]
-    print(name)
+digits = datasets.load_digits()
 
-    f1 = np.loadtxt('D:/Study/Bioinformatics/UCI/' + name + '/data.csv', delimiter = ',')
-    X = f1[:, 0:-1]
-    y = f1[:, -1]
+n_samples = len(digits.images) # images: {ndarray} of shape (1797, 8, 8) The raw image data (8*8).
+data = digits.images.reshape((n_samples, -1)) 
 
-    scaler = preprocessing.MinMaxScaler(feature_range = (-1, 1)).fit(X)
-    X = scaler.transform(X) # 特征标准化
+X_train, X_test, y_train, y_test = train_test_split(data, digits.target, test_size=0.5, shuffle=False)
 
-    cnt = dict(collections.Counter(y))
-    n_class = len(cnt)
-    max_val = int(min(cnt.values())/5*4)
-    num = int((max_val - max_val%5)/5)
+cv = KFold(n_splits=5, shuffle=True, random_state=0)
+parameters = {'estimator__C': np.logspace(-15, 5, base=2, num=21), 'estimator__gamma':np.logspace(-15, 5, base=2, num=21)}
+grid = GridSearchCV(OneVsRestClassifier(SVC(kernel='rbf'), n_jobs=-1), parameters, n_jobs=-1,cv=cv, verbose=2)
 
-    
-    cv = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 0)
+grid.fit(X_train, y_train)
+C = grid.best_params_['estimator__C']
+gamma = grid.best_params_['estimator__gamma']
 
-    clf = DVM.Class_KDVM_knn.KDVM(kernel = 'rbf', gamma = 1, n_neighbors = 5)
-    clf.fit(X, y)
-    y_prob = clf.decision_function(X)
-    print(y_prob)
 
-    
+clf = OneVsRestClassifier(SVC(kernel='rbf', C=C, gamma=gamma))
+clf.fit(X_train, y_train)
+y_predicted = clf.predict(X_test)
+ACC = metrics.accuracy_score(y_test, y_predicted)
 
-    
+
+print(ACC)

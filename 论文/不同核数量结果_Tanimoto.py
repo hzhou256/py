@@ -11,9 +11,14 @@ y_MCC_DS1 = [0.7914,0.8078,0.8121,0.8086,0.8053]
 y_ACC_DS2 = [0.9384,0.9456,0.9431,0.9422,0.9422]
 y_MCC_DS2 = [0.8770,0.8914,0.8864,0.8846,0.8847]
 
+
 dataset_name = ['Antifp_Main', 'Antifp_DS1', 'Antifp_DS2']
 for ds in range(3):
     name_ds = dataset_name[ds]
+
+    font = {'size': 14}
+    plt.figure(figsize = [5, 4])
+
     print('dataset:', name_ds)
     if ds == 0:
         y_ACC = y_ACC_Main
@@ -32,11 +37,12 @@ for ds in range(3):
     max_MCC = np.max(y_MCC)
     plt.text(x = np.argmax(y_ACC)+1, y = max_ACC, s = 'ACC = ' + str(max_ACC))
     plt.text(x = np.argmax(y_MCC)+1, y = max_MCC, s = 'MCC = ' + str(max_MCC))
-    plt.legend(loc = 'lower right', fontsize = 8)
-    plt.xlabel("Kernel number")
-    plt.ylabel("Score")
+    plt.legend(loc = 'lower right', fontsize = 9)
+    plt.xlabel("Kernel number", font)
+    plt.ylabel("Score", font)
     #plt.ylim((0.6, 1))
     plt.xticks([1,2,3,4,5])
-    plt.title(name_ds + " Tanimoto")
-    plt.savefig("E:/论文/图表/不同核数量结果图/" + name_ds + "_Tanimoto_.png")
+    plt.title(name_ds + " Tanimoto", font)
+    plt.tight_layout()
+    plt.savefig("D:\\Study\\论文\\achemso\\figure\\kernels\\" + name_ds + "_Tanimoto_.png", dpi = 600)
     plt.show()

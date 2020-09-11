@@ -68,5 +68,5 @@ for ds in range(3):
     plt.ylabel("Rate")
     plt.legend()
 
-    plt.savefig("D:/论文/图表/正负样本长度分布图/" + name_ds + ".png")
+    #plt.savefig("D:/论文/图表/正负样本长度分布图/" + name_ds + ".png")
     plt.show()

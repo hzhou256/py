@@ -3,18 +3,16 @@ import csv
 import pandas as pd
 
 
-os.system('python E:/Study/iFeature/iFeature.py --file E:/Study/Bioinformatics/AMP/fasta/test.fasta --out E:/Study/Bioinformatics/AMP/features/AAC/test_AAC.csv --type AAC')
-#os.system('python D:/Study/iFeature/iFeature.py --file D:/Study/Bioinformatics/AMP/test.fasta --out D:/Study/Bioinformatics/AMP/CTD/test_CTDC.csv --type CTDC')
-#os.system('python D:/Study/iFeature/iFeature.py --file D:/Study/Bioinformatics/AMP/test.fasta --out D:/Study/Bioinformatics/AMP/CTD/test_CTDT.csv --type CTDT')
-#os.system('python D:/Study/iFeature/iFeature.py --file D:/Study/Bioinformatics/AMP/test.fasta --out D:/Study/Bioinformatics/AMP/CTD/test_CTDD.csv --type CTDD')
-os.system('python E:/Study/iFeature/codes/CKSAAP.py E:/Study/Bioinformatics/AMP/fasta/test.fasta 2 E:/Study/Bioinformatics/AMP/features/CKSAAP/test_CKSAAP.csv')
-#os.system('java -jar D:/Study/Bioinformatics/成都培训/188D(SVMProt)/188D.jar D:/Study/Bioinformatics/AMP/test_negative.fasta D:/Study/Bioinformatics/AMP/188-bit/test_188-bit_negative.arff')
-#os.system('java -jar D:/Study/Bioinformatics/成都培训/188D(SVMProt)/188D.jar D:/Study/Bioinformatics/AMP/test_positive.fasta D:/Study/Bioinformatics/AMP/188-bit/test_188-bit_positive.arff')
+#os.system('python D:/Study/Bioinformatics/成都培训/git/feature-extraction/iFeature.py --file D:/Study/Bioinformatics/补实验/AIE/fasta/train.fasta --out D:/Study/Bioinformatics/补实验/AIE/features/train_AAC.csv --type AAC')
+#os.system('python D:/Study/Bioinformatics/成都培训/git/feature-extraction/iFeature.py --file D:/Study/Bioinformatics/补实验/AIE/fasta/test.fasta --out D:/Study/Bioinformatics/补实验/AIE/features/test_AAC.csv --type AAC')
 
+#os.system('python D:/Study/Bioinformatics/成都培训/git/feature-extraction/iFeature.py --file D:/Study/Bioinformatics/补实验/AIE/fasta/train.fasta --out D:/Study/Bioinformatics/补实验/AIE/features/train_DPC.csv --type DPC')
+#os.system('python D:/Study/Bioinformatics/成都培训/git/feature-extraction/iFeature.py --file D:/Study/Bioinformatics/补实验/AIE/fasta/test.fasta --out D:/Study/Bioinformatics/补实验/AIE/features/test_DPC.csv --type DPC')
 
-#f1 = pd.read_csv('D:/Study/Bioinformatics/AMP/CTD/test_CTDC.csv', header=None)
-#f2 = pd.read_csv('D:/Study/Bioinformatics/AMP/CTD/test_CTDT.csv', header=None)
-#f3 = pd.read_csv('D:/Study/Bioinformatics/AMP/CTD/test_CTDD.csv', header=None)
-#dat = f1.join(f2.drop(columns=0), lsuffix='_')
-#dat = dat.join(f3.drop(columns=0), lsuffix='_')
-#dat.to_csv('D:/Study/Bioinformatics/AMP/CTD/test_CTD.csv', sep=',', header=None, index=False)
+#os.system('python D:/Study/Bioinformatics/成都培训/git/feature-extraction/codes/CKSAAP.py E:/Study/Bioinformatics/AMP/fasta/test.fasta 5 E:/Study/Bioinformatics/AMP/features/CKSAAP/test_CKSAAP.csv')
+
+os.system('java -jar D:/Study/Bioinformatics/成都培训/188D(SVMProt)/188D.jar D:\\Study\\Bioinformatics\\补实验\\AIE\\fasta\\temp\\pos_training.txt D:\\Study\\Bioinformatics\\补实验\\AIE\\features\\188\\train_188-bit_pos.arff')
+os.system('java -jar D:/Study/Bioinformatics/成都培训/188D(SVMProt)/188D.jar D:\\Study\\Bioinformatics\\补实验\\AIE\\fasta\\temp\\neg_training.txt D:\\Study\\Bioinformatics\\补实验\\AIE\\features\\188\\train_188-bit_neg.arff')
+os.system('java -jar D:/Study/Bioinformatics/成都培训/188D(SVMProt)/188D.jar D:\\Study\\Bioinformatics\\补实验\\AIE\\fasta\\temp\\pos_validation.txt D:\\Study\\Bioinformatics\\补实验\\AIE\\features\\188\\test_188-bit_pos.arff')
+os.system('java -jar D:/Study/Bioinformatics/成都培训/188D(SVMProt)/188D.jar D:\\Study\\Bioinformatics\\补实验\\AIE\\fasta\\temp\\neg_validation.txt D:\\Study\\Bioinformatics\\补实验\\AIE\\features\\188\\test_188-bit_neg.arff')
+
