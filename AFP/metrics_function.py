@@ -4,7 +4,6 @@ from scipy.spatial.distance import cdist
 
 
 
-@jit
 def gaussian(vec1, vec2, g):
     k = np.exp(-g*np.square((np.linalg.norm(vec1 - vec2))))
     return k
