@@ -30,17 +30,18 @@ kernel_test_list = []
 gram_train = np.zeros((n_train, n_train))
 gram_test = np.zeros((n_test, n_train))
 
-n_kernels = 3
+n_kernels = 5
 
-methods_name = ['CKSAAP', 'ASDC', '188-bit', 'AAC', 'DPC']
+methods_name = ['188-bit', 'AAC', 'ASDC', 'CKSAAP', 'DPC']
 for it in range(n_kernels):
     name = methods_name[it]
+    print(name)
     gram_train = np.loadtxt('D:/Study/Bioinformatics/补实验/AMP/kernels/K_train_'+name+'.csv', delimiter = ',')
     gram_test = np.loadtxt('D:/Study/Bioinformatics/补实验/AMP/kernels/K_test_'+name+'.csv', delimiter = ',')
     kernel_train_list.append(gram_train)
     kernel_test_list.append(gram_test)
 
-weight_v = hsic_kernel_weights_norm(kernel_train_list, y_train, 1, 0.01, 0.001)
+weight_v = hsic_kernel_weights_norm(kernel_train_list, y_train, 1, 0.01, 0)
 
 for i in range(n_kernels):
     gram_train += kernel_train_list[i]*weight_v[i]
@@ -49,7 +50,7 @@ for i in range(n_kernels):
 
 cv = model_selection.StratifiedKFold(n_splits = 10, shuffle = True, random_state = 0)
 
-parameters = {'C': np.logspace(-15, 10, base = 2, num = 52)}
+parameters = {'C': np.logspace(-15, 10, base = 2, num = 26)}
 grid = model_selection.GridSearchCV(svm.SVC(kernel = 'precomputed', probability = True), parameters, n_jobs = -1, cv = cv, verbose = 2)
 grid.fit(gram_train, y_train)
 C = grid.best_params_['C']

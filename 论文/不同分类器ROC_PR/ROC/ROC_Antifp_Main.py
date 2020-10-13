@@ -4,7 +4,7 @@ from sklearn import naive_bayes
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn import metrics
-from sklearn import model_selection
+from sklearn import model_selection, preprocessing
 from imblearn.metrics import specificity_score
 import matplotlib.pyplot as plt 
 
@@ -35,13 +35,13 @@ for ds in range(1):
     for it in range(1):
         name = methods_name[it]
 
-        f1 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/' + name + '/train_' + name + '.csv', delimiter = ',', skiprows = 1)
-        f2 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/train_label.csv', delimiter = ',')
-        f3 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/' + name + '/test_' + name + '.csv', delimiter = ',', skiprows = 1)
-        f4 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/test_label.csv', delimiter = ',')        
+        f1 = np.loadtxt('D:/Study/Bioinformatics/补实验/AFP/feature_matrix/' + name_ds + '/' + name + '/train_' + name + '.csv', delimiter = ',')
+        f2 = np.loadtxt('D:/Study/Bioinformatics/补实验/AFP/feature_matrix/' + name_ds + '/train_label.csv', delimiter = ',')
+        f3 = np.loadtxt('D:/Study/Bioinformatics/补实验/AFP/feature_matrix/' + name_ds + '/' + name + '/test_' + name + '.csv', delimiter = ',')
+        f4 = np.loadtxt('D:/Study/Bioinformatics/补实验/AFP/feature_matrix/' + name_ds + '/test_label.csv', delimiter = ',')        
 
-        X_train = get_matrix(f1)
-        X_test = get_matrix(f3)
+        X_train = f1
+        X_test = f3
         y_train = f2
         y_test = f4
 
@@ -53,50 +53,75 @@ for ds in range(1):
         y_score = clf.predict_proba(X_test)
         y_score = get_y_score(y_score)
         fpr, tpr, thresholds = metrics.roc_curve(y_test, y_score)
-        plt.plot(fpr, tpr, label = 'Naive Bayes - AUC: 0.8431')
+        plt.plot(fpr, tpr, label = 'Naive Bayes - AUC: 0.8404')
 
         #随机森林
-        clf = RandomForestClassifier(max_depth = 92, n_estimators = 132)
+        clf = RandomForestClassifier(max_depth = 69, n_estimators = 110)
         clf.fit(X_train, y_train)
         y_score = clf.predict_proba(X_test)
         y_score = get_y_score(y_score)
         fpr, tpr, thresholds = metrics.roc_curve(y_test, y_score)
-        plt.plot(fpr, tpr, label = 'Random Forest - AUC: 0.9586')
+        plt.plot(fpr, tpr, label = 'Random Forest - AUC: 0.9603')
 
         #决策树
-        clf = DecisionTreeClassifier(max_depth = 6, min_samples_leaf = 9)
+        clf = DecisionTreeClassifier(max_depth = 5, min_samples_leaf = 8)
         clf.fit(X_train, y_train)
         y_score = clf.predict_proba(X_test)
         y_score = get_y_score(y_score)
         fpr, tpr, thresholds = metrics.roc_curve(y_test, y_score)
-        plt.plot(fpr, tpr, label = 'Decision Tree - AUC: 0.8464')
+        plt.plot(fpr, tpr, label = 'Decision Tree - AUC: 0.8368')
 
         #支持向量机
-        clf = svm.SVC(C = 27.087, gamma = 7.34, kernel = 'rbf', probability = True)
+        clf = svm.SVC(C = 16, gamma = 3.0517578125e-05, kernel = 'rbf', probability = True)
         clf.fit(X_train, y_train)
         y_score = clf.predict_proba(X_test)
         y_score = get_y_score(y_score)
         fpr, tpr, thresholds = metrics.roc_curve(y_test, y_score)
-        plt.plot(fpr, tpr, label = 'SVM - AUC: 0.9588')        
+        plt.plot(fpr, tpr, label = 'SVM - AUC: 0.9406')        
 
         #Our Model
-        f1 = np.loadtxt('D:/Study/Bioinformatics/AFP/kernel_matrix_2/' + name_ds + '/KM_train_tanimoto/combine_tanimoto_HSIC_train.csv', delimiter = ',')
-        f2 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/train_label.csv', delimiter = ',')
-        f3 = np.loadtxt('D:/Study/Bioinformatics/AFP/kernel_matrix_2/' + name_ds + '/KM_test_tanimoto/combine_tanimoto_HSIC_test.csv', delimiter = ',')
-        f4 = np.loadtxt('D:/Study/Bioinformatics/AFP/feature_matrix/' + name_ds + '/test_label.csv', delimiter = ',')
+        G_list = [0.25,8,1,0.25,1]
+        weight_v = [0.20779853,0.21165743,0.20338872,0.18990633,0.18724899]
 
-        gram = f1
-        y_train = f2
-        gram_test = f3
-        y_test = f4
+        n_train = len(y_train)
+        n_test = len(y_test)
+        n_kernels = 5
 
-        clf = svm.SVC(C = 3.237, kernel = 'precomputed', probability = True)
-        clf.fit(gram, y_train)
+        kernel_train_list = []
+        kernel_test_list = []
+        gram_train = np.zeros((n_train, n_train))
+        gram_test = np.zeros((n_test, n_train))
+        for it in range(5):
+            methods = ['188-bit', 'AAC', 'ASDC', 'CKSAAP', 'DPC']
+            name = methods[it]
+            print(name)
+            f1 = np.loadtxt('D:/Study/Bioinformatics/补实验/AFP/feature_matrix/' + name_ds + '/' + name +'/train_' + name +'.csv', delimiter = ',', skiprows = 1)
+            f3 = np.loadtxt('D:/Study/Bioinformatics/补实验/AFP/feature_matrix/' + name_ds + '/' + name +'/test_' + name +'.csv', delimiter = ',', skiprows = 1)
+            
+            X_train = get_matrix(f1)
+            X_test = get_matrix(f3)
+
+            scaler = preprocessing.MinMaxScaler(feature_range = (0, 1)).fit(X_train)
+            X_train = scaler.transform(X_train)
+            X_test = scaler.transform(X_test)
+
+            gram_train = metrics.pairwise.rbf_kernel(X_train, X_train, gamma = G_list[it])
+            gram_test = metrics.pairwise.rbf_kernel(X_test, X_train, gamma = G_list[it])
+            kernel_train_list.append(gram_train)
+            kernel_test_list.append(gram_test)
+        
+        for i in range(n_kernels):
+            gram_train += kernel_train_list[i]*weight_v[i]
+            gram_test += kernel_test_list[i]*weight_v[i]
+
+
+        clf = svm.SVC(C = 4, kernel = 'precomputed', probability = True)
+        clf.fit(gram_train, y_train)
 
         y_score = clf.predict_proba(gram_test)
         y_score = get_y_score(y_score)
         fpr, tpr, thresholds = metrics.roc_curve(y_test, y_score)
-        plt.plot(fpr, tpr, label = 'Our Model - AUC: 0.9695')  
+        plt.plot(fpr, tpr, label = 'Our Model - AUC: 0.9688')  
 
         plt.legend(prop = font_legend)
         plt.title(name_ds, font)
@@ -104,5 +129,5 @@ for ds in range(1):
         plt.ylabel('True positive rate', font)
 
         plt.tight_layout()
-        plt.savefig("D:\\Study\\论文\\achemso\\figure\\ROC_PR_fix\\diff_model\\ROC_" + name_ds + ".png", dpi=600)
+        plt.savefig("D:\\Study\\论文\\tcbb-AFP\\figure\\ROC_PR_fix\\diff_model\\ROC_" + name_ds + ".png", dpi=600)
         plt.show()

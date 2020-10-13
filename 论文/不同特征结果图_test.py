@@ -37,5 +37,5 @@ for ds in range(3):
 
 
     plt.tight_layout()
-    plt.savefig("D:/Study/论文/achemso/figure/feature_result/" + name_ds + "_test.png", dpi = 600)
+    #plt.savefig("D:/Study/论文/achemso_0825/figure/feature_result/" + name_ds + "_test.png", dpi = 600)
     plt.show()

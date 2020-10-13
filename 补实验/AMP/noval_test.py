@@ -30,17 +30,18 @@ kernel_test_list = []
 gram_train = np.zeros((n_train, n_train))
 gram_test = np.zeros((n_test, n_train))
 
-n_kernels = 3
+n_kernels = 5
 
-methods_name = ['CKSAAP', 'ASDC', '188-bit', 'AAC', 'DPC']
+methods_name = ['188-bit', 'AAC', 'ASDC', 'CKSAAP', 'DPC']
 for it in range(n_kernels):
     name = methods_name[it]
+    print(name)
     gram_train = np.loadtxt('D:/Study/Bioinformatics/补实验/AMP/kernels/K_train_'+name+'.csv', delimiter = ',')
     gram_test = np.loadtxt('D:/Study/Bioinformatics/补实验/AMP/kernels/710/K_710_'+name+'.csv', delimiter = ',')
     kernel_train_list.append(gram_train)
     kernel_test_list.append(gram_test)
 
-weight_v = [0.3186291,0.37837295,0.30299796]
+weight_v = [0.23995582,0.21975895,0.210551,0.16740353,0.1623307]
 
 for i in range(n_kernels):
     gram_train += kernel_train_list[i]*weight_v[i]
@@ -49,7 +50,7 @@ for i in range(n_kernels):
 
 cv = model_selection.StratifiedKFold(n_splits = 10, shuffle = True, random_state = 0)
 
-C = 4.45944059314577
+C = 0.5
 
 clf = svm.SVC(C = C, kernel = 'precomputed', probability = True)
 
