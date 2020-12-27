@@ -53,5 +53,5 @@ for ds in range(3):
         plt.legend(loc = 'upper left')
         #在图下面画标签
         plt.title(alphabet[it] + '' + name, y = -0.18)
-    plt.savefig("D:/论文/图表/tsne可视化/" + name_ds + ".png")
+    #plt.savefig("D:/论文/图表/tsne可视化/" + name_ds + ".png")
     plt.show()
